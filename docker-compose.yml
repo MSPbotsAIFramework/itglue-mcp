@@ -1,0 +1,6 @@
+services:
+  itglue-mcp:
+    build: .
+    image: itglue-mcp:local
+    ports:
+      - "8080:8080"

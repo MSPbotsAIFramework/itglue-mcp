@@ -1,0 +1,369 @@
+{
+ "archive_configuration": {
+  "params": [
+   "configuration_id"
+  ],
+  "required": [
+   "configuration_id"
+  ]
+ },
+ "archive_document": {
+  "params": [
+   "document_id"
+  ],
+  "required": [
+   "document_id"
+  ]
+ },
+ "create_attachment": {
+  "params": [
+   "content",
+   "file_name",
+   "resource_id",
+   "resource_type"
+  ],
+  "required": [
+   "content",
+   "file_name",
+   "resource_id",
+   "resource_type"
+  ]
+ },
+ "create_document": {
+  "params": [
+   "content",
+   "document_folder_id",
+   "name",
+   "organization_id",
+   "skip_folder_prompt"
+  ],
+  "required": [
+   "name",
+   "organization_id"
+  ]
+ },
+ "create_document_section": {
+  "params": [
+   "content",
+   "document_id",
+   "section_type"
+  ],
+  "required": [
+   "content",
+   "document_id",
+   "section_type"
+  ]
+ },
+ "create_location": {
+  "params": [
+   "address_1",
+   "address_2",
+   "city",
+   "country_id",
+   "fax",
+   "name",
+   "notes",
+   "organization_id",
+   "phone",
+   "postal_code",
+   "primary",
+   "region_id"
+  ],
+  "required": [
+   "name",
+   "organization_id"
+  ]
+ },
+ "create_password": {
+  "params": [
+   "name",
+   "notes",
+   "organization_id",
+   "password",
+   "password_category_id",
+   "url",
+   "username"
+  ],
+  "required": [
+   "name",
+   "organization_id",
+   "password"
+  ]
+ },
+ "delete_document": {
+  "params": [
+   "document_id"
+  ],
+  "required": [
+   "document_id"
+  ]
+ },
+ "delete_document_section": {
+  "params": [
+   "document_id",
+   "section_id"
+  ],
+  "required": [
+   "document_id",
+   "section_id"
+  ]
+ },
+ "get_configuration": {
+  "params": [
+   "id"
+  ],
+  "required": [
+   "id"
+  ]
+ },
+ "get_document": {
+  "params": [
+   "id",
+   "organization_id"
+  ],
+  "required": [
+   "id",
+   "organization_id"
+  ]
+ },
+ "get_location": {
+  "params": [
+   "id"
+  ],
+  "required": [
+   "id"
+  ]
+ },
+ "get_organization": {
+  "params": [
+   "id"
+  ],
+  "required": [
+   "id"
+  ]
+ },
+ "get_password": {
+  "params": [
+   "id",
+   "show_password"
+  ],
+  "required": [
+   "id"
+  ]
+ },
+ "itglue_health_check": {
+  "params": [],
+  "required": []
+ },
+ "list_attachments": {
+  "params": [
+   "resource_id",
+   "resource_type"
+  ],
+  "required": [
+   "resource_id",
+   "resource_type"
+  ]
+ },
+ "list_document_folders": {
+  "params": [
+   "name",
+   "organization_id",
+   "page_number",
+   "page_size"
+  ],
+  "required": [
+   "organization_id"
+  ]
+ },
+ "list_document_sections": {
+  "params": [
+   "document_id"
+  ],
+  "required": [
+   "document_id"
+  ]
+ },
+ "list_flexible_asset_types": {
+  "params": [
+   "organization_id"
+  ],
+  "required": []
+ },
+ "publish_document": {
+  "params": [
+   "document_id"
+  ],
+  "required": [
+   "document_id"
+  ]
+ },
+ "search_configurations": {
+  "params": [
+   "configuration_status_id",
+   "configuration_type_id",
+   "name",
+   "organization_id",
+   "page_number",
+   "page_size",
+   "psa_id",
+   "rmm_id",
+   "serial_number",
+   "sort"
+  ],
+  "required": []
+ },
+ "search_documents": {
+  "params": [
+   "document_folder_id",
+   "name",
+   "organization_id",
+   "page_number",
+   "page_size",
+   "sort"
+  ],
+  "required": [
+   "organization_id"
+  ]
+ },
+ "search_flexible_assets": {
+  "params": [
+   "flexible_asset_type_id",
+   "name",
+   "organization_id",
+   "page_number",
+   "page_size",
+   "sort"
+  ],
+  "required": [
+   "flexible_asset_type_id"
+  ]
+ },
+ "search_locations": {
+  "params": [
+   "city",
+   "country_id",
+   "name",
+   "organization_id",
+   "page_number",
+   "page_size",
+   "psa_id",
+   "region_id",
+   "sort"
+  ],
+  "required": []
+ },
+ "search_organizations": {
+  "params": [
+   "name",
+   "organization_status_id",
+   "organization_type_id",
+   "page_number",
+   "page_size",
+   "psa_id",
+   "sort"
+  ],
+  "required": []
+ },
+ "search_passwords": {
+  "params": [
+   "name",
+   "organization_id",
+   "page_number",
+   "page_size",
+   "password_category_id",
+   "sort",
+   "url",
+   "username"
+  ],
+  "required": []
+ },
+ "search_user_metrics": {
+  "params": [
+   "end_date",
+   "organization_id",
+   "page_number",
+   "page_size",
+   "resource_type",
+   "sort",
+   "start_date",
+   "user_id"
+  ],
+  "required": []
+ },
+ "unarchive_configuration": {
+  "params": [
+   "configuration_id"
+  ],
+  "required": [
+   "configuration_id"
+  ]
+ },
+ "unarchive_document": {
+  "params": [
+   "document_id"
+  ],
+  "required": [
+   "document_id"
+  ]
+ },
+ "update_document": {
+  "params": [
+   "document_id",
+   "name"
+  ],
+  "required": [
+   "document_id",
+   "name"
+  ]
+ },
+ "update_document_section": {
+  "params": [
+   "content",
+   "document_id",
+   "section_id"
+  ],
+  "required": [
+   "content",
+   "document_id",
+   "section_id"
+  ]
+ },
+ "update_location": {
+  "params": [
+   "address_1",
+   "address_2",
+   "city",
+   "country_id",
+   "fax",
+   "id",
+   "name",
+   "notes",
+   "organization_id",
+   "phone",
+   "postal_code",
+   "primary",
+   "region_id"
+  ],
+  "required": [
+   "id",
+   "organization_id"
+  ]
+ },
+ "update_password": {
+  "params": [
+   "id",
+   "name",
+   "notes",
+   "organization_id",
+   "password",
+   "password_category_id",
+   "url",
+   "username"
+  ],
+  "required": [
+   "id",
+   "organization_id"
+  ]
+ }
+}
