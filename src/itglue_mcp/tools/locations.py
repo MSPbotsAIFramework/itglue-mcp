@@ -9,7 +9,7 @@ from pydantic import Field
 
 from .. import api
 from ..config import Settings
-from ._common import CREATE, READ, UPDATE, PageNumber, PageSize, ToolInputError, paging, run, seg
+from ._common import CREATE, READ, UPDATE, Offset, PageNumber, PageSize, ToolInputError, locate, run, seg
 
 Name = Annotated[str | None, Field(description="Location name.")]
 CountryId = Annotated[int | None, Field(description="IT Glue country ID (usually required when creating).")]
@@ -45,12 +45,13 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         psa_id: Annotated[str | None, Field(description="ID of the location in the linked PSA.")] = None,
         page_size: PageSize = None,
         page_number: PageNumber = None,
+        offset: Offset = None,
         sort: Annotated[
             str | None,
             Field(description="Sort field: name, id, primary, created_at or updated_at. Prefix '-' for descending."),
         ] = None,
     ) -> str:
-        size, number, params = paging(page_size, page_number)
+        size, number, params, start = locate(page_size, page_number, offset)
         params.update(
             {
                 "filter[name]": name,
@@ -67,7 +68,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
                 path = f"/organizations/{seg(organization_id)}/relationships/locations"
             else:
                 path = "/locations"
-            return api.page(await client.get(path, params), number, size)
+            return api.page(await client.get(path, params), number, size, start=start)
 
         return await run(settings, handler)
 

@@ -32,12 +32,31 @@ PageSize = Annotated[
     Field(description=f"Results per page (default {DEFAULT_PAGE_SIZE}, max {MAX_PAGE_SIZE}).", ge=1),
 ]
 PageNumber = Annotated[int | None, Field(description="Page number, starting at 1 (default 1).", ge=1)]
+Offset = Annotated[
+    int | None,
+    Field(
+        description="Record position to start from (0-based; overrides page_number). "
+        "Pass next_offset from the previous result.",
+        ge=0,
+    ),
+]
 
 
 def paging(page_size: int | None, page_number: int | None) -> tuple[int, int, dict[str, int]]:
     size = min(max(page_size or DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE)
     number = max(page_number or 1, 1)
     return size, number, {"page[size]": size, "page[number]": number}
+
+
+def locate(
+    page_size: int | None, page_number: int | None, offset: int | None, fixed_size: int | None = None
+) -> tuple[int, int, dict[str, int], int]:
+    """(page size, page number, query params, start). The page holding ``offset`` is fetched;
+    ``api.page`` then skips the records before it, so a cut page continues exactly."""
+    size = fixed_size or min(max(page_size or DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE)
+    start = offset if offset is not None else (max(page_number or 1, 1) - 1) * size
+    number = start // size + 1
+    return size, number, {"page[size]": size, "page[number]": number}, start
 
 
 Handler = Callable[[ITGlueClient], Awaitable[Any]]

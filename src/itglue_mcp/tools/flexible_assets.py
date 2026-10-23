@@ -9,7 +9,7 @@ from pydantic import Field
 
 from .. import api
 from ..config import Settings
-from ._common import READ, PageNumber, PageSize, paging, run
+from ._common import READ, Offset, PageNumber, PageSize, locate, run
 
 TYPES_PAGE_SIZE = 200
 
@@ -29,10 +29,12 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             int | None,
             Field(description="Accepted for compatibility; types are defined account-wide, so it is ignored."),
         ] = None,
+        offset: Offset = None,
     ) -> str:
         async def handler(client: api.ITGlueClient):
-            params = {"page[size]": TYPES_PAGE_SIZE, "page[number]": 1, "sort": "name"}
-            return api.page(await client.get("/flexible_asset_types", params), 1, TYPES_PAGE_SIZE)
+            size, number, params, start = locate(None, None, offset, fixed_size=TYPES_PAGE_SIZE)
+            params["sort"] = "name"
+            return api.page(await client.get("/flexible_asset_types", params), number, size, start=start)
 
         return await run(settings, handler)
 
@@ -51,12 +53,13 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         name: Annotated[str | None, Field(description="Exact asset name.")] = None,
         page_size: PageSize = None,
         page_number: PageNumber = None,
+        offset: Offset = None,
         sort: Annotated[
             str | None,
             Field(description="Sort field: name, created_at or updated_at. Prefix '-' for descending."),
         ] = None,
     ) -> str:
-        size, number, params = paging(page_size, page_number)
+        size, number, params, start = locate(page_size, page_number, offset)
         params.update(
             {
                 "filter[flexible_asset_type_id]": flexible_asset_type_id,
@@ -67,6 +70,6 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         )
 
         async def handler(client: api.ITGlueClient):
-            return api.page(await client.get("/flexible_assets", params), number, size)
+            return api.page(await client.get("/flexible_assets", params), number, size, start=start)
 
         return await run(settings, handler)

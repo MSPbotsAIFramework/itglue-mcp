@@ -280,5 +280,6 @@ async def test_large_results_are_truncated(call):
     rows = [doc("configurations", i, name="x" * 500) for i in range(100)]
     respx.get(f"{BASE}/configurations").mock(return_value=httpx.Response(200, json={"data": rows}))
     out = await call("search_configurations", page_size=100)
-    assert out["truncated"] is True and out["has_more"] is True
+    # Shortening the long names keeps every record (PRD-21362: the shared size cap).
+    assert out["fields_truncated"] is True and out["count"] == 100
     assert len(json.dumps(out)) <= 20_500

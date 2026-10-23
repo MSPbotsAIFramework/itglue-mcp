@@ -9,7 +9,7 @@ from pydantic import Field
 
 from .. import api
 from ..config import Settings
-from ._common import CREATE, READ, UPDATE, PageNumber, PageSize, ToolInputError, paging, run, seg
+from ._common import CREATE, READ, UPDATE, Offset, PageNumber, PageSize, ToolInputError, locate, run, seg
 
 SECRET_FIELDS = {"password", "otp_secret"}
 
@@ -41,6 +41,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         ] = None,
         page_size: PageSize = None,
         page_number: PageNumber = None,
+        offset: Offset = None,
         sort: Annotated[
             str | None,
             Field(
@@ -48,7 +49,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             ),
         ] = None,
     ) -> str:
-        size, number, params = paging(page_size, page_number)
+        size, number, params, start = locate(page_size, page_number, offset)
         params.update(
             {
                 "filter[organization_id]": organization_id,
@@ -60,7 +61,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         )
 
         async def handler(client: api.ITGlueClient):
-            result = api.page(await client.get("/passwords", params), number, size, drop=SECRET_FIELDS)
+            result = api.page(await client.get("/passwords", params), number, size, drop=SECRET_FIELDS, start=start)
             if username:
                 wanted = username.strip().lower()
                 result["items"] = [i for i in result["items"] if wanted in str(i.get("username") or "").lower()]

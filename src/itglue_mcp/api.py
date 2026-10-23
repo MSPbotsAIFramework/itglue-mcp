@@ -11,6 +11,7 @@ Reference: IT Glue developer documentation (https://api.itglue.com/developer/).
 import asyncio
 import email.utils
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -184,10 +185,13 @@ def page(
     page_number: int,
     page_size: int,
     drop: set[str] | None = None,
+    start: int | None = None,
 ) -> dict[str, Any]:
     payload = payload or {}
     rows = payload.get("data") or []
-    items = [flatten(r, drop) for r in rows]
+    first = (page_number - 1) * page_size
+    skip = max((start if start is not None else first) - first, 0)
+    items = [flatten(r, drop) for r in rows[skip:]]
     meta = payload.get("meta") or {}
     total = meta.get("total-count")
     total_pages = meta.get("total-pages")
@@ -208,6 +212,21 @@ def page(
     }
     if total is not None:
         result["total_count"] = total
+    # offset / next_offset continue exactly, also after a page is cut to fit the size limit.
+    result["offset"] = first + skip
+    if has_more:
+        result["next_offset"] = first + len(rows)
+    result["_resume"] = {"key": "next_offset", "start": first + skip}
+    return result
+
+
+def keep_matching(result: dict[str, Any], match: Callable[[dict[str, Any]], bool]) -> dict[str, Any]:
+    """Filter a page locally; a cut result then continues after the last match it returned."""
+    start = result["offset"]
+    kept = [(i, item) for i, item in enumerate(result["items"]) if match(item)]
+    result["items"] = [item for _, item in kept]
+    result["count"] = len(kept)
+    result["_resume"] = {"key": "next_offset", "positions": [start + i + 1 for i, _ in kept]}
     return result
 
 

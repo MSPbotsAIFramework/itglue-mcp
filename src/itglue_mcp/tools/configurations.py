@@ -9,7 +9,7 @@ from pydantic import Field
 
 from .. import api
 from ..config import Settings
-from ._common import READ, UPDATE, PageNumber, PageSize, paging, run, seg
+from ._common import READ, UPDATE, Offset, PageNumber, PageSize, locate, run, seg
 
 SYNC_NOTE = "Records synced from a PSA or RMM may be changed back by the next sync; change the source system first."
 
@@ -34,12 +34,13 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         psa_id: Annotated[str | None, Field(description="ID of the device in the linked PSA.")] = None,
         page_size: PageSize = None,
         page_number: PageNumber = None,
+        offset: Offset = None,
         sort: Annotated[
             str | None,
             Field(description="Sort field: name, id, created_at or updated_at. Prefix '-' for descending."),
         ] = None,
     ) -> str:
-        size, number, params = paging(page_size, page_number)
+        size, number, params, start = locate(page_size, page_number, offset)
         params.update(
             {
                 "filter[organization_id]": organization_id,
@@ -54,7 +55,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         )
 
         async def handler(client: api.ITGlueClient):
-            return api.page(await client.get("/configurations", params), number, size)
+            return api.page(await client.get("/configurations", params), number, size, start=start)
 
         return await run(settings, handler)
 

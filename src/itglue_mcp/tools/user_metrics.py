@@ -10,7 +10,7 @@ from pydantic import Field
 
 from .. import api
 from ..config import Settings
-from ._common import READ, PageNumber, PageSize, ToolInputError, paging, run
+from ._common import READ, Offset, PageNumber, PageSize, ToolInputError, locate, run
 
 MAX_RANGE_DAYS = 7
 
@@ -59,8 +59,9 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         ] = None,
         page_size: PageSize = None,
         page_number: PageNumber = None,
+        offset: Offset = None,
     ) -> str:
-        size, number, params = paging(page_size, page_number)
+        size, number, params, start = locate(page_size, page_number, offset)
 
         async def handler(client: api.ITGlueClient):
             params.update(
@@ -72,6 +73,6 @@ def register(mcp: FastMCP, settings: Settings) -> None:
                     "sort": sort,
                 }
             )
-            return api.page(await client.get("/user_metrics", params), number, size)
+            return api.page(await client.get("/user_metrics", params), number, size, start=start)
 
         return await run(settings, handler)

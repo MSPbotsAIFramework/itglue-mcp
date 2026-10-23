@@ -117,9 +117,13 @@ Behaviour notes:
 - Every tool returns a JSON string. Errors use one envelope:
   `{"error": {"code": "...", "message": "...", "retryable": false}}` with `code` one of
   `not_configured`, `unauthorized`, `not_found`, `invalid_argument`, `rate_limited`, `upstream_error`.
-- List tools return `{"items", "count", "page_number", "page_size", "has_more", "total_count"}`.
-  `page_size` defaults to 50 and is capped at 200. Results larger than 20,000 characters are cut
-  and flagged with `truncated` / `has_more`.
+- List tools return `{"items", "count", "page_number", "page_size", "has_more", "total_count",
+  "offset", "next_offset"}`. `page_size` defaults to 50 and is capped at 200. To read the next page,
+  pass `next_offset` as `offset`: results larger than 20,000 characters are cut (`truncated`), and
+  `next_offset` then starts right after the last record returned, so nothing is skipped.
+- `get_document` and `list_document_sections` page a document's sections with `offset` / `limit`.
+  A section whose `content_length` is larger than its content was shortened; read it in parts with
+  `list_document_sections(section_id, content_offset)` until `has_more` is false.
 - `search_passwords` never returns secrets. `create_password` and `update_password` do not echo them.
 - IT Glue has no server-side name filter for documents or folders and no username filter for
   passwords; those filters are applied to the returned page.

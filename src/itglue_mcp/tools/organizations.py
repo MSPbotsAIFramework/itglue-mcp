@@ -9,7 +9,7 @@ from pydantic import Field
 
 from .. import api
 from ..config import Settings
-from ._common import READ, PageNumber, PageSize, paging, run, seg
+from ._common import READ, Offset, PageNumber, PageSize, locate, run, seg
 
 
 def register(mcp: FastMCP, settings: Settings) -> None:
@@ -29,12 +29,13 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         psa_id: Annotated[str | None, Field(description="ID of the organization in the linked PSA.")] = None,
         page_size: PageSize = None,
         page_number: PageNumber = None,
+        offset: Offset = None,
         sort: Annotated[
             str | None,
             Field(description="Sort field, e.g. name, id, created_at, updated_at. Prefix '-' for descending."),
         ] = None,
     ) -> str:
-        size, number, params = paging(page_size, page_number)
+        size, number, params, start = locate(page_size, page_number, offset)
         params.update(
             {
                 "filter[name]": name,
@@ -46,7 +47,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         )
 
         async def handler(client: api.ITGlueClient):
-            return api.page(await client.get("/organizations", params), number, size)
+            return api.page(await client.get("/organizations", params), number, size, start=start)
 
         return await run(settings, handler)
 
