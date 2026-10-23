@@ -28,6 +28,9 @@ from .config import (
 class Credentials:
     api_key: str
     base_url: str
+    # Set when the region / base URL header is malformed: tools report it as invalid_argument
+    # (and never call IT Glue), while initialize / tools/list still work.
+    header_error: str | None = None
 
 
 _current: contextvars.ContextVar[Credentials | None] = contextvars.ContextVar("itglue_credentials", default=None)
@@ -90,12 +93,14 @@ class CredentialMiddleware:
             await _reject(401, f"Send your IT Glue API key in the {API_KEY_HEADER} header.")(scope, receive, send)
             return
         try:
-            base_url = resolve_base_url(request.headers.get(REGION_HEADER), request.headers.get(BASE_URL_HEADER))
+            creds = Credentials(
+                api_key=api_key,
+                base_url=resolve_base_url(request.headers.get(REGION_HEADER), request.headers.get(BASE_URL_HEADER)),
+            )
         except CredentialError as exc:
-            await _reject(400, str(exc))(scope, receive, send)
-            return
+            creds = Credentials(api_key=api_key, base_url="", header_error=str(exc))
 
-        token = _current.set(Credentials(api_key=api_key, base_url=base_url))
+        token = _current.set(creds)
         try:
             await self.app(scope, receive, send)
         finally:

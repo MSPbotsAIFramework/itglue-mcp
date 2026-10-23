@@ -73,6 +73,28 @@ async def test_retries_rate_limit_then_succeeds(call):
     assert out["status"] == "ok" and route.call_count == 2
 
 
+@pytest.mark.parametrize(
+    "message",
+    [
+        "X-ITGlue-Region must be one of: us, eu, au.",
+        "X-ITGlue-Base-URL must be an https URL on an IT Glue host (*.itglue.com).",
+    ],
+)
+@respx.mock
+async def test_malformed_region_or_base_url_is_invalid_argument_without_calling_api(call, message):
+    # PRD-20835: the header is checked when a tool runs; nothing is sent to an unchecked host.
+    from itglue_mcp import credentials
+
+    bad = credentials.Credentials(api_key="test-key", base_url="", header_error=message)
+    token = credentials._current.set(bad)
+    try:
+        out = await call("get_organization", id="1")
+    finally:
+        credentials._current.reset(token)
+    assert out["error"]["code"] == "invalid_argument" and out["error"]["message"] == message
+    assert respx.calls.call_count == 0
+
+
 async def test_non_numeric_id_is_rejected_without_calling_api(call):
     out = await call("get_organization", id="1/../../users")
     assert out["error"]["code"] == "invalid_argument"

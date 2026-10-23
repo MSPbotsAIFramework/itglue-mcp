@@ -51,6 +51,8 @@ async def run(settings: Settings, handler: Handler) -> str:
     creds = current()
     if creds is None:
         return _json.error("not_configured", f"No IT Glue credentials. Send the {API_KEY_HEADER} header.")
+    if creds.header_error:
+        return _json.error("invalid_argument", creds.header_error)
     try:
         async with ITGlueClient(creds, settings) as client:
             result = await handler(client)

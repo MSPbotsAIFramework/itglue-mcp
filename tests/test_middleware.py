@@ -28,9 +28,36 @@ def test_missing_api_key_is_401(client):
     assert "X-ITGlue-API-Key" in r.json()["required_headers"]
 
 
-def test_bad_base_url_is_400(client):
-    h = {**HEADERS, "X-ITGlue-API-Key": "k", "X-ITGlue-Base-URL": "https://evil.example.com"}
-    assert client.post("/mcp", json=LIST, headers=h).status_code == 400
+INIT = {
+    "jsonrpc": "2.0",
+    "id": 0,
+    "method": "initialize",
+    "params": {"protocolVersion": "2025-03-26", "capabilities": {}, "clientInfo": {"name": "probe", "version": "1"}},
+}
+
+
+# PRD-20835: the admin console refreshes the tool catalog with a placeholder in every header.
+@pytest.mark.parametrize(
+    "extra",
+    [
+        {"X-ITGlue-Region": "placeholder"},
+        {"X-ITGlue-Base-URL": "placeholder"},
+        {"X-ITGlue-Base-URL": "https://evil.example.com"},
+        {"X-ITGlue-Region": "placeholder", "X-ITGlue-Base-URL": "placeholder"},
+    ],
+)
+def test_malformed_region_or_base_url_does_not_block_initialize_or_tools_list(client, extra):
+    h = {**HEADERS, "X-ITGlue-API-Key": "placeholder", **extra}
+    assert client.post("/mcp", json=INIT, headers=h).status_code == 200
+    r = client.post("/mcp", json=LIST, headers=h)
+    assert r.status_code == 200
+    assert len(r.json()["result"]["tools"]) == 33
+
+
+@pytest.mark.parametrize("key", ["", "   "])
+def test_empty_api_key_is_still_401(client, key):
+    h = {**HEADERS, "X-ITGlue-API-Key": key, "X-ITGlue-Region": "placeholder"}
+    assert client.post("/mcp", json=LIST, headers=h).status_code == 401
 
 
 def test_tools_list_is_stateless(client):
