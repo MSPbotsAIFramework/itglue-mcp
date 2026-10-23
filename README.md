@@ -74,15 +74,7 @@ MSPbots Connector gives your AI clients one MCP URL to reach your entire MSP sta
 
 ### Pricing
 
-| | |
-|---|---|
-| **$15 / seat / month** | $0 per organization. Annual billing saves 15% ($12.75 / seat / month). |
-| **30-day free trial** | All features included. |
-| **No usage billing** | Pay per seat, not per call. |
-| **Humans and AI agents both count as seats** | The first 2 agent seats in each organization are free. |
-| **Free for existing paid MSPbots customers** | |
-
-Monthly total = $0 + $15 × billable seats.
+**Free.**
 
 Links: [connect.mspbots.ai](https://connect.mspbots.ai) · [mspbots.ai](https://mspbots.ai)
 
