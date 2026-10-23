@@ -22,7 +22,7 @@ requests.
 
 MSPbots Connector gives your AI clients one MCP URL to reach your entire MSP stack (RMM, PSA, documentation, security, finance), and gives you control over who can call which tool and a record of everything that was called.
 
-**Hosted service: [connect.mspbots.ai](https://connect.mspbots.ai)** · 30-day free trial · free for existing paid MSPbots customers.
+**Hosted service: [connect.mspbots.ai](https://connect.mspbots.ai)** · Free to use.
 
 ### Why Connector
 
@@ -37,7 +37,7 @@ MSPbots Connector gives your AI clients one MCP URL to reach your entire MSP sta
 
 ### Quick start
 
-1. **Sign up** at [connect.mspbots.ai](https://connect.mspbots.ai) and start your 30-day trial.
+1. **Sign up** at [connect.mspbots.ai](https://connect.mspbots.ai).
 2. **Connect your vendors.** Pick from 150+ connectors and authorize each one on the vendor's own page, or bring your own API keys. No extra vendor accounts needed.
 3. **Set access.** Create roles and decide which tools each role may call. Nothing is allowed until you allow it.
 4. **Add your MCP URL to your AI client.** Copy the URL from your Connector dashboard into Claude, ChatGPT, Cursor, VS Code, Gemini, Codex, or any MCP-capable client.
