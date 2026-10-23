@@ -9,6 +9,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Mount, Route
 
+from ._arguments import EnvelopeFastMCP
 from .config import Settings
 from .credentials import CredentialMiddleware
 from .tools import (
@@ -37,7 +38,7 @@ INSTRUCTIONS = (
 
 
 def create_mcp(settings: Settings) -> FastMCP:
-    mcp = FastMCP(
+    mcp = EnvelopeFastMCP(
         name="itglue-mcp",
         instructions=INSTRUCTIONS,
         stateless_http=True,
