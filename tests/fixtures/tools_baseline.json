@@ -362,8 +362,7 @@
    "username"
   ],
   "required": [
-   "id",
-   "organization_id"
+   "id"
   ]
  }
 }

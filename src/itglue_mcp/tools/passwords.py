@@ -1,6 +1,9 @@
 # Copyright 2026 MSPbots.ai
 # SPDX-License-Identifier: Apache-2.0
-"""Password entries. Secrets are only returned by get_password and never echoed on writes."""
+"""Password entries. Secrets are only returned by get_password and never echoed on writes.
+
+Rotation (find an entry, then set a new secret): search_passwords -> update_password.
+"""
 
 from typing import Annotated
 
@@ -9,8 +12,21 @@ from pydantic import Field
 
 from .. import api
 from ..config import Settings
-from ._common import CREATE, READ, UPDATE, Offset, PageNumber, PageSize, ToolInputError, locate, run, seg
+from ._common import (
+    CREATE,
+    READ,
+    SECRET_SCHEMA,
+    UPDATE,
+    Offset,
+    PageNumber,
+    PageSize,
+    ToolInputError,
+    locate,
+    run,
+    seg,
+)
 
+# Never returned by list or write tools. The list endpoint can include "password" on some entries.
 SECRET_FIELDS = {"password", "otp_secret"}
 
 EntryName = Annotated[str | None, Field(description='Entry name, e.g. "Jane Doe - Microsoft 365".')]
@@ -25,7 +41,8 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         name="search_passwords",
         description=(
             "Find password entries in IT Glue by organization, name, category, URL or username. "
-            "Returns metadata only; use get_password to read a secret."
+            "Returns metadata only (id, name, username, category, updated_at), never secrets; "
+            "use get_password to read one or update_password to rotate it."
         ),
         annotations=READ,
         structured_output=False,
@@ -64,8 +81,8 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             result = api.page(await client.get("/passwords", params), number, size, drop=SECRET_FIELDS, start=start)
             if username:
                 wanted = username.strip().lower()
-                result["items"] = [i for i in result["items"] if wanted in str(i.get("username") or "").lower()]
-                result["count"] = len(result["items"])
+                # IT Glue has no username filter, so it is matched on the fetched page.
+                api.keep_matching(result, lambda i: wanted in str(i.get("username") or "").lower())
             return result
 
         return await run(settings, handler)
@@ -100,7 +117,7 @@ def register(mcp: FastMCP, settings: Settings) -> None:
     async def create_password(
         organization_id: Annotated[int, Field(description="Organization that owns the entry.")],
         name: Annotated[str, Field(description='Entry name, e.g. "Jane Doe - Microsoft 365".')],
-        password: Annotated[str, Field(description="The secret value.")],
+        password: Annotated[str, Field(description="The secret value.", json_schema_extra=SECRET_SCHEMA)],
         username: Username = None,
         url: Url = None,
         notes: Notes = None,
@@ -119,22 +136,25 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             path = f"/organizations/{seg(organization_id)}/relationships/passwords"
             return api.item(await client.post(path, api.attributes("passwords", values)), drop=SECRET_FIELDS)
 
-        return await run(settings, handler)
+        return await run(settings, handler, secrets=[password])
 
     @mcp.tool(
         name="update_password",
         description=(
-            "Update an IT Glue password entry. Only the fields you pass are changed; the secret is not echoed back."
+            "Update an IT Glue password entry, e.g. rotate its secret: find the entry ID with search_passwords, "
+            "then pass id and the new password. Only the fields you pass are changed; the secret is not echoed back."
         ),
         annotations=UPDATE,
         structured_output=False,
     )
     async def update_password(
-        organization_id: Annotated[int, Field(description="Organization that owns the entry.")],
         id: Annotated[str, Field(description="Password entry ID.")],
+        organization_id: Annotated[
+            int | None, Field(description="Organization that owns the entry (optional).")
+        ] = None,
         name: EntryName = None,
         username: Username = None,
-        password: Annotated[str | None, Field(description="New secret value.")] = None,
+        password: Annotated[str | None, Field(description="New secret value.", json_schema_extra=SECRET_SCHEMA)] = None,
         url: Url = None,
         notes: Notes = None,
         password_category_id: CategoryId = None,
@@ -151,7 +171,11 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         async def handler(client: api.ITGlueClient):
             if not any(v is not None for v in values.values()):
                 raise ToolInputError("Pass at least one field to change.")
-            path = f"/organizations/{seg(organization_id)}/relationships/passwords/{seg(id)}"
-            return api.item(await client.patch(path, api.attributes("passwords", values)), drop=SECRET_FIELDS)
+            if organization_id is None:
+                path = f"/passwords/{seg(id)}"
+            else:
+                path = f"/organizations/{seg(organization_id)}/relationships/passwords/{seg(id)}"
+            payload = await client.patch(path, api.attributes("passwords", values), {"show_password": "false"})
+            return api.item(payload, drop=SECRET_FIELDS)
 
-        return await run(settings, handler)
+        return await run(settings, handler, secrets=[password])

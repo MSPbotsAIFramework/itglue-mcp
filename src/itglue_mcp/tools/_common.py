@@ -3,7 +3,7 @@
 """Shared plumbing for tool handlers."""
 
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from typing import Annotated, Any
 
 from mcp.types import ToolAnnotations
@@ -62,11 +62,28 @@ def locate(
 Handler = Callable[[ITGlueClient], Awaitable[Any]]
 
 
-async def run(settings: Settings, handler: Handler) -> str:
+REDACTED = "[redacted]"
+
+# Marks a tool parameter as a secret in the input schema (standard JSON Schema hints), so callers
+# and run records can mask it. The value is never logged or echoed by this server.
+SECRET_SCHEMA = {"format": "password", "writeOnly": True}
+
+
+def redact(text: str, secrets: Iterable[str | None]) -> str:
+    """Replace every occurrence of the given secret values in ``text``."""
+    for secret in secrets:
+        if secret:
+            text = text.replace(secret, REDACTED)
+    return text
+
+
+async def run(settings: Settings, handler: Handler, secrets: Iterable[str | None] = ()) -> str:
     """Execute ``handler`` with a client bound to this request's credentials.
 
-    Always returns a string: the JSON result, or an error envelope.
+    Always returns a string: the JSON result, or an error envelope. ``secrets`` (e.g. a password
+    the caller passed) are masked in error messages and never written to the log.
     """
+    secrets = [s for s in secrets if s]
     creds = current()
     if creds is None:
         return _json.error("not_configured", f"No IT Glue credentials. Send the {API_KEY_HEADER} header.")
@@ -76,11 +93,15 @@ async def run(settings: Settings, handler: Handler) -> str:
         async with ITGlueClient(creds, settings) as client:
             result = await handler(client)
     except ApiError as exc:
-        return _json.error(exc.code, exc.message, exc.retryable)
+        return _json.error(exc.code, redact(exc.message, secrets), exc.retryable)
     except ToolInputError as exc:
-        return _json.error("invalid_argument", str(exc))
-    except Exception:  # noqa: BLE001 - tools must never raise
-        log.exception("unexpected error in tool handler")
+        return _json.error("invalid_argument", redact(str(exc), secrets))
+    except Exception as exc:  # noqa: BLE001 - tools must never raise
+        if secrets:
+            # No traceback: its frames and messages could carry the secret.
+            log.error("unexpected error in tool handler: %s", type(exc).__name__)
+        else:
+            log.exception("unexpected error in tool handler")
         return _json.error("upstream_error", "Unexpected error while calling IT Glue.", True)
     return result if isinstance(result, str) else _json.dump(result)
 

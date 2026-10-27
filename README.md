@@ -125,6 +125,11 @@ Behaviour notes:
   A section whose `content_length` is larger than its content was shortened; read it in parts with
   `list_document_sections(section_id, content_offset)` until `has_more` is false.
 - `search_passwords` never returns secrets. `create_password` and `update_password` do not echo them.
+- Rotating a password: `search_passwords` (organization, name and/or username) to find the entry ID,
+  then `update_password(id, password, notes?)`. `organization_id` is optional on `update_password`.
+  Only the fields passed are sent to IT Glue; nothing else is changed or cleared.
+- `password` parameters are marked secret in the tool schema (`format: password`, `writeOnly`); the
+  server never logs them and masks them in error messages.
 - IT Glue has no server-side name filter for documents or folders and no username filter for
   passwords; those filters are applied to the returned page.
 - Section edits are only visible after `publish_document`.
