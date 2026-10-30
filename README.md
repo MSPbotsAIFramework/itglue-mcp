@@ -104,7 +104,7 @@ Note: IT Glue revokes API keys that have not been used for 90 days.
 | Documents | `search_documents`, `get_document`, `list_document_folders`, `create_document`, `update_document`, `delete_document`, `publish_document`, `archive_document`, `unarchive_document` |
 | Document sections | `list_document_sections`, `create_document_section`, `update_document_section`, `delete_document_section` |
 | Attachments | `create_attachment`, `list_attachments` |
-| Flexible assets | `list_flexible_asset_types`, `search_flexible_assets` |
+| Flexible assets | `list_flexible_asset_types`, `search_flexible_assets`, `get_flexible_asset`, `create_flexible_asset`, `update_flexible_asset` |
 | Activity | `search_user_metrics` |
 | Diagnostics | `itglue_health_check` |
 

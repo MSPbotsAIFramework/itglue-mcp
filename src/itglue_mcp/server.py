@@ -31,7 +31,8 @@ INSTRUCTIONS = (
     "organization ID. Typical flows: devices -> search_configurations; client address or phone -> "
     "search_locations; credentials -> search_passwords then get_password; knowledge articles -> "
     "search_documents then get_document; custom records -> list_flexible_asset_types then "
-    "search_flexible_assets. To edit a document body: list_document_sections, then "
+    "search_flexible_assets, then get/create/update_flexible_asset to read or change one. "
+    "To edit a document body: list_document_sections, then "
     "create/update/delete_document_section, then publish_document. Prefer archive over delete. "
     "Ask the user before archiving, unarchiving or deleting anything."
 )
