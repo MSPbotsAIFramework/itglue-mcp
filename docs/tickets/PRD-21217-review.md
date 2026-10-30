@@ -76,3 +76,43 @@ Verdict: changes requested
 - No pre-existing ruff/lint baseline issues were introduced or hidden; the dev leg verified the
   pristine-`main` baseline separately (3 lint errors, 3 files needing reformat) and confirmed its
   own new file was clean before commit — increment-only judgement applied correctly.
+
+### Round 1 · Fixes (review rework, 2026-10-30)
+
+Fixed the single must-fix (finding 1):
+
+- `docs/tickets/PRD-21217.md` — translated all 8 flagged occurrences to English, in place, pure
+  translation with no change to the design's substance:
+  - Line 123 (Product design > Open questions): `[不阻塞]` → `[non-blocking]`.
+  - Lines 183, 187, 189, 192 (Tech design > Change list): `[改]` → `[changed]` (×4).
+  - Line 194: `[新增/改]` → `[new/changed]`.
+  - Line 196: `[新增]` → `[new]`.
+  - Line 335 (Self-test): the quoted Chinese phrase citing `references/mcp-track.md` §3 replaced
+    with its English meaning: `"a missing vendor test account is not a blocker"`.
+  - Also updated the Self-test "Pre-existing issues found but not touched" bullet (line ~420-428,
+    not itself one of the 8 flagged lines) so it no longer asserts the issue is untouched or quotes
+    the original Chinese tags — it now states the issue was found pre-existing by this ticket's own
+    design commit, flagged by this review round, and fixed here. This bullet was not in the finding's
+    line list but quoted the same tags and would otherwise go stale and still fail the grep gate
+    after the fix; translating it is the same no-substance-change class of edit the finding
+    authorized, not a new must-fix.
+  - Did not change the frozen header SHA reference mechanism: `docs/tickets/PRD-21217.md` carries
+    `Status: frozen @ 7a492e2` from the original dev leg; this review-rework edit is layered on top
+    per `legs/dev.md` S1 "评审返工" (fix on the same branch, document the fix in this review file,
+    main document otherwise left alone).
+- Verification: `grep -rnP '[\x{4e00}-\x{9fff}]' --exclude-dir=.git --exclude-dir=.venv .` now
+  returns **zero matches in `docs/tickets/PRD-21217.md`**, and zero matches anywhere outside this
+  review file. The only remaining Chinese in the repository is in this file's own Round 1 findings
+  above (lines 10-13, 20-24, 36) — the reviewer's verbatim citation of the original defect text and
+  of this pipeline's own Chinese-language internal SOP/reference docs as evidence. That citation is
+  the historical record of what round 1 found and is left unedited (review findings are not revised
+  after the fact); it is not product code, design content, or documentation the repo ships — it is
+  this pipeline's own audit trail. Flagging this explicitly for round 2 to confirm that reading is
+  acceptable, rather than silently relying on it.
+- Gates re-run on the fixed commit (docs-only change; code and tests untouched since round 1):
+  `uv run pytest -q` — 110 passed; `uv run ruff check .` / `uv run ruff format --check .` scoped to
+  touched files — clean (only `docs/tickets/PRD-21217.md` changed, not a lint target); local smoke
+  (`initialize` + `tools/list`) unchanged from the Self-test section (36 tools, including the three
+  new `flexible_asset` tools) since no source file was touched in this round.
+- Suggestion (finding 2, tool naming prefix): not addressed — the review itself marked it
+  non-blocking and recommended a separate repo-wide ticket, not a fix in this one.
