@@ -1,0 +1,68 @@
+[
+  {
+    "id": "TC1",
+    "ac": "AC1",
+    "text": "Given a flexible asset ID that exists in IT Glue, when get_flexible_asset is called, then the response includes id, name, organization_id, flexible_asset_type_id, traits and archived.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_get_flexible_asset_returns_full_record"],
+    "source": "design"
+  },
+  {
+    "id": "TC2",
+    "ac": "AC2",
+    "text": "Given a flexible asset ID that does not exist, when get_flexible_asset is called, then the response is the not_found error envelope, not a raw HTTP error.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_get_flexible_asset_not_found_returns_envelope"],
+    "source": "design"
+  },
+  {
+    "id": "TC3",
+    "ac": "AC3",
+    "text": "Given an organization_id, a flexible_asset_type_id and a set of traits, when create_flexible_asset is called, then IT Glue has a new flexible asset of that type under that organization and the response includes the new asset's id and the fields that were set.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_create_flexible_asset_happy_path"],
+    "source": "design"
+  },
+  {
+    "id": "TC4",
+    "ac": "AC4",
+    "text": "Given an existing flexible asset and only name passed, when update_flexible_asset is called, then only name changes in the request sent to IT Glue and traits is not sent.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_sends_only_changed_fields"],
+    "source": "design"
+  },
+  {
+    "id": "TC5",
+    "ac": "AC5",
+    "text": "Given no fields passed to update_flexible_asset, when it is called, then it returns invalid_argument and makes no HTTP request to IT Glue.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_rejects_empty_call"],
+    "source": "design"
+  },
+  {
+    "id": "TC6",
+    "ac": "AC1,AC3,AC4",
+    "text": "Given a real IT Glue tenant, when an agent creates a flexible asset, reads it back, updates one trait, and reads it back again, then the IT Glue UI shows the same organization, type, name and trait values as the three tool responses.",
+    "type": "manual",
+    "steps": [
+      "Call create_flexible_asset with a real organization_id, flexible_asset_type_id and one trait value",
+      "Call get_flexible_asset with the returned id and record the response",
+      "Call update_flexible_asset on the same id, changing one trait value",
+      "Call get_flexible_asset again and record the response",
+      "Open the asset in the IT Glue web UI and compare name, organization, type and trait values against both get_flexible_asset responses"
+    ],
+    "expect": "The IT Glue UI's organization, type, name and trait values match the second get_flexible_asset response exactly; the first get_flexible_asset response matches the values passed to create_flexible_asset.",
+    "result": "untested",
+    "evidence": "",
+    "notes": "Needs a real vendor account; no IT Glue test tenant is available to this pipeline. Not a blocker per references/mcp-track.md §3.",
+    "source": "design"
+  },
+  {
+    "id": "TC7",
+    "ac": "AC7",
+    "text": "Given a forced IT Glue error response during create_flexible_asset while a trait value looks like a credential, when the error is returned, then the error envelope's message text does not contain that trait value.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_create_flexible_asset_error_does_not_leak_trait_values"],
+    "source": "design"
+  }
+]
