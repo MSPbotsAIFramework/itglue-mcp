@@ -7,21 +7,24 @@ Verdict: changes requested
 ### Findings
 
 1. [must-fix] docs/tickets/PRD-21217.md:123,183,187,189,192,194,196,335 — the design document
-   introduced by this ticket's own branch contains Chinese bracket tags (`[不阻塞]`, `[改]`,
-   `[新增]`, `[新增/改]`) and a quoted Chinese phrase. This repo is an MSPbotsAIFramework vendor MCP
-   repo, which must be entirely English (SOP §0.4, checklist item "仓库内容全部英文…均无中文";
-   `references/mcp-track.md` §4.3 lists "仓库里没有中文" as a condition where any failure is a
-   must-fix). `scripts/mbp.py` and the Self-test section of this same document (line 423) already
+   introduced by this ticket's own branch contains Chinese bracket tags (meaning "non-blocking",
+   "changed" ×4, "new", and "new/changed") and a quoted Chinese phrase. This repo is an
+   MSPbotsAIFramework vendor MCP repo, which must be entirely English (SOP §0.4, checklist item
+   meaning "repo content must be entirely English ... no Chinese anywhere";
+   `references/mcp-track.md` §4.3 lists a requirement meaning "no Chinese in the repo" as a
+   condition where any failure is a must-fix). `scripts/mbp.py` and the Self-test section of this
+   same document (line 423) already
    acknowledge the issue exists but explicitly leave it untouched, attributing it to the design
    leg's own commit (`bf0c4c9`) and calling it outside the dev leg's mandate. That division of
    responsibility is correct for the *product design* content, but the flagged occurrences are not
    product-design wording — they are English/Chinese-mixed change-list and open-question labels
    under the "Tech design" and "Product design > Open questions" headings. Per this skill's own
-   ownership rule, the Tech design section (where 6 of the 8 occurrences live: the `[改]`/`[新增]`/
-   `[新增/改]` tags in "Change list") is dev's to edit without changing user-visible behaviour, so
-   translating those six tags to English equivalents (e.g. `[changed]`, `[new]`, `[new/changed]`)
-   is in scope for the fix. The remaining two (`[不阻塞]` under Product design > Open questions, and
-   the quoted "缺厂商测试账号不算阻塞" in Self-test) touch product-design wording or a direct quote
+   ownership rule, the Tech design section (where 6 of the 8 occurrences live: the Chinese
+   "changed"/"new"/"new-changed" tags in "Change list") is dev's to edit without changing
+   user-visible behaviour, so translating those six tags to English equivalents (e.g. `[changed]`,
+   `[new]`, `[new/changed]`) is in scope for the fix. The remaining two (the Chinese "non-blocking"
+   tag under Product design > Open questions, and the quoted Chinese sentence meaning "a missing
+   vendor test account is not a blocker" in Self-test) touch product-design wording or a direct quote
    of this pipeline's own Chinese-language internal docs — flag these for the design leg to correct
    if assignee is not dev, otherwise translate consistently since the repo-wide constraint
    (checklist item, not a design-content rule) takes precedence over which leg normally owns the
@@ -33,7 +36,8 @@ Verdict: changes requested
 
 2. [suggestion] src/itglue_mcp/tools/flexible_assets.py:90,101,128 — the three new tool names
    (`get_flexible_asset`, `create_flexible_asset`, `update_flexible_asset`) do not carry the
-   `<vendor>_` prefix that SOP §2's checklist calls for ("工具名带 `<vendor>_` 前缀"). This is not
+   `<vendor>_` prefix that SOP §2's checklist calls for (a Chinese checklist item meaning "tool
+   names carry a `<vendor>_` prefix"). This is not
    flagged as must-fix because it is not something this diff introduces in isolation: every other
    tool in this repo except `itglue_health_check` is unprefixed (`search_organizations`,
    `get_password`, `create_location`, the two existing `flexible_assets` tools
@@ -83,10 +87,11 @@ Fixed the single must-fix (finding 1):
 
 - `docs/tickets/PRD-21217.md` — translated all 8 flagged occurrences to English, in place, pure
   translation with no change to the design's substance:
-  - Line 123 (Product design > Open questions): `[不阻塞]` → `[non-blocking]`.
-  - Lines 183, 187, 189, 192 (Tech design > Change list): `[改]` → `[changed]` (×4).
-  - Line 194: `[新增/改]` → `[new/changed]`.
-  - Line 196: `[新增]` → `[new]`.
+  - Line 123 (Product design > Open questions): the Chinese "non-blocking" tag → `[non-blocking]`.
+  - Lines 183, 187, 189, 192 (Tech design > Change list): the Chinese "changed" tag → `[changed]`
+    (×4).
+  - Line 194: the Chinese "new/changed" tag → `[new/changed]`.
+  - Line 196: the Chinese "new" tag → `[new]`.
   - Line 335 (Self-test): the quoted Chinese phrase citing `references/mcp-track.md` §3 replaced
     with its English meaning: `"a missing vendor test account is not a blocker"`.
   - Also updated the Self-test "Pre-existing issues found but not touched" bullet (line ~420-428,
@@ -98,8 +103,8 @@ Fixed the single must-fix (finding 1):
     authorized, not a new must-fix.
   - Did not change the frozen header SHA reference mechanism: `docs/tickets/PRD-21217.md` carries
     `Status: frozen @ 7a492e2` from the original dev leg; this review-rework edit is layered on top
-    per `legs/dev.md` S1 "评审返工" (fix on the same branch, document the fix in this review file,
-    main document otherwise left alone).
+    per `legs/dev.md` S1 (the "review rework" rule: fix on the same branch, document the fix in
+    this review file, main document otherwise left alone).
 - Verification: `grep -rnP '[\x{4e00}-\x{9fff}]' --exclude-dir=.git --exclude-dir=.venv .` now
   returns **zero matches in `docs/tickets/PRD-21217.md`**, and zero matches anywhere outside this
   review file. The only remaining Chinese in the repository is in this file's own Round 1 findings
@@ -151,4 +156,46 @@ confirming this round's diff is docs-only as claimed.
    traceable without violating the all-English requirement. Re-run the grep above after the edit to
    confirm it returns zero matches anywhere in the repo.
 
-### Fixes            ← round 3 dev leg appends here
+### Round 2 · Fixes (review rework, 2026-10-30)
+
+Fixed the single must-fix (finding 1):
+
+- `docs/tickets/PRD-21217-review.md` — rewrote the Round 1 "Findings" and "Round 1 · Fixes" prose
+  (then at lines 10-13, 20-24, 36, 86-89, 101) so it describes the original Chinese bracket tags
+  and the quoted Chinese sentence in English only, without reproducing the literal Chinese
+  characters, while keeping the same line numbers and commit references so the record stays
+  traceable:
+  - Finding 1 (lines 10-13): the sentence naming the four literal Chinese bracket tags was rewritten
+    to instead describe them by meaning ("non-blocking", "changed" ×4, "new", and "new/changed");
+    the two quoted checklist phrases were rewritten to describe their meaning in English ("repo
+    content must be entirely English ... no Chinese anywhere" and "no Chinese in the repo") instead
+    of quoting the original wording.
+  - Finding 1 (lines 20-24): the sentence naming the three literal tags was rewritten to describe
+    them as "the Chinese 'changed'/'new'/'new-changed' tags"; the sentence naming the remaining tag
+    and quoting the Self-test sentence was rewritten to describe them as "the Chinese 'non-blocking'
+    tag ... and the quoted Chinese sentence meaning 'a missing vendor test account is not a
+    blocker'".
+  - Finding 2 (line 36): the quoted checklist phrase for the `<vendor>_` prefix rule was rewritten to
+    describe its meaning ("tool names carry a `<vendor>_` prefix") instead of quoting the original
+    wording.
+  - Round 1 Fixes list (lines 86-89): each bullet's leading literal tag was rewritten to describe it
+    by meaning ("the Chinese 'non-blocking'/'changed'/'new-changed'/'new' tag") ahead of the
+    `→ [english-tag]` translation it documents.
+  - Round 1 Fixes closing note (line 101): the quoted two-character label for this pipeline's
+    "review rework" rule was rewritten to just name the rule in English ("the 'review rework'
+    rule").
+  - Did not touch the Round 1 "What passed review" section, the "Round 1 fix verification" section
+    under Round 2, or this finding's own prose (lines 134-157) — none of those contain literal
+    Chinese characters, and finding 2's own text explicitly avoids reproducing the defect it is
+    describing, so no change was needed there.
+  - No source, test, or main-document (`docs/tickets/PRD-21217.md`) file touched — this round's
+    must-fix is entirely about this review document's own prose.
+- Verification: `grep -rnP '[\x{4e00}-\x{9fff}]' --exclude-dir=.git --exclude-dir=.venv .` now
+  returns **zero matches anywhere in the repository**, including this file.
+- Gates re-run on the fixed commit (docs-only change; code and tests untouched since round 1):
+  `uv run pytest -q` — 110 passed (unchanged); `uv run ruff check .` / `uv run ruff format --check .`
+  — same pre-existing baseline (3 errors / 3 files, not introduced by this or any prior round, since
+  no Python file was touched); local smoke unchanged from Self-test (36 tools, incl. the three new
+  `flexible_asset` tools) since no source file was touched in this round.
+- Suggestion (finding 2, tool naming prefix): still not addressed — unchanged from round 1, the
+  review itself marked it non-blocking and recommended a separate repo-wide ticket.
