@@ -1,5 +1,7 @@
 # PRD-21217 · Code review
 
+Status: frozen @ 1a9e9b1
+
 ## Round 1 · 2026-10-30 · reviewed dev/PRD-21217 @ 3d4e57a (base main @ 544c707)
 
 Verdict: changes requested
@@ -199,3 +201,52 @@ Fixed the single must-fix (finding 1):
   `flexible_asset` tools) since no source file was touched in this round.
 - Suggestion (finding 2, tool naming prefix): still not addressed — unchanged from round 1, the
   review itself marked it non-blocking and recommended a separate repo-wide ticket.
+
+## Round 3 · 2026-10-30 · reviewed dev/PRD-21217 @ 1a9e9b1 (base main @ 544c707)
+
+Verdict: approved
+
+### Round 1/2 Fixes verification
+
+- Round 1 must-fix (Chinese text in `docs/tickets/PRD-21217.md`): confirmed translated in `b7547e3`
+  and verified again here — `grep -rnP '[\x{4e00}-\x{9fff}]' --exclude-dir=.git --exclude-dir=.venv .`
+  on `1a9e9b1` returns zero matches anywhere in the repository.
+- Round 2 must-fix (Chinese quoted in the review document's own Round 1 prose): confirmed rewritten
+  in `1a9e9b1` to describe the original tags/quote in English without reproducing the characters;
+  covered by the same zero-match grep above.
+- Gates re-run on `1a9e9b1`: `uv run pytest -q` — 110 passed. `uv run ruff check .` /
+  `uv run ruff format --check .` — 3 errors / 3 files (`tests/test_handlers.py`,
+  `tests/test_paging_offset.py`, `src/itglue_mcp/_json.py`), none of them touched by this ticket's
+  diff (`git diff 544c707...1a9e9b1 --stat` confirms); same pre-existing baseline reported since
+  round 1, not introduced by this change.
+
+### New diff this round
+
+None — `b8c651b...1a9e9b1` touches only `docs/tickets/PRD-21217-review.md` (round 2's own fix).
+No source, test, or main-document file changed since round 2's review. Scope for this round is
+therefore the cumulative diff `544c707...1a9e9b1` already reviewed in rounds 1–2, now with both
+must-fixes resolved.
+
+### Findings
+
+1. [suggestion] `docs/tickets/PRD-21217.md:295-300` (Tech design > Non-functional > Security) — this
+   paragraph states "this ticket does not introduce a new secret-bearing field, so no masking
+   parameter is added," but the implementation does add masking: `flexible_assets.py`'s
+   `_trait_secrets()` feeds every string-valued trait into `run(..., secrets=...)`, matching AC7
+   ("no trait name is assumed safe to omit from masking by default") and covered by
+   `tests/test_flexible_assets.py::test_create_flexible_asset_error_does_not_leak_trait_values`
+   (passes). The Self-test "Change list" and `docs/changes/2026-10-30-flexible-asset-management.md`
+   both correctly describe the masking that was built; only this one Tech design sentence is stale
+   and contradicts the delivered code. Not a functional defect — the stricter (masking) behavior is
+   what shipped and is tested — but the sentence should be corrected so a future reader of the frozen
+   design doc isn't misled about what the code does. Not blocking: AC7 is satisfied, tests pass, and
+   this is pure documentation staleness inside a section dev may edit freely.
+2. [suggestion] (carried over from round 1, unresolved, still non-blocking) the 3 new tools
+   (`get/create/update_flexible_asset`) lack the `<vendor>_` prefix SOP §2 calls for, consistent with
+   every tool in this repo except `itglue_health_check` — a pre-existing, repo-wide baseline gap this
+   ticket should not fix alone.
+
+### Conclusion
+
+No must-fix. Code review passed on round 3 (2 suggestions, neither blocking). Proceeding to merge
+into `main`, INT publish, and the connector wiki check in the review leg.
