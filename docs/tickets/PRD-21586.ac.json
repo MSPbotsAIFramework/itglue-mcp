@@ -1,0 +1,60 @@
+[
+  {
+    "id": "TC-IGU-001",
+    "ac": "AC1",
+    "text": "Given valid credentials and no filters, When itglue_list_account_users is called, Then it returns the standard list envelope and each item has id, first_name, last_name, email, role_name, my_glue and last_sign_in_at.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_list_account_users_returns_envelope_with_expected_fields"]
+  },
+  {
+    "id": "TC-IGU-002",
+    "ac": "AC2",
+    "text": "Given name, email and role_name are passed, When itglue_list_account_users is called, Then they are forwarded as filter[name], filter[email] and filter[role_name] on the GET /users request.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_list_account_users_forwards_filters"]
+  },
+  {
+    "id": "TC-IGU-003",
+    "ac": "AC3",
+    "text": "Given a sort value such as \"-created_at\", When itglue_list_account_users is called, Then the sort query parameter is forwarded unchanged to IT Glue (no local validation, matching every other list tool).",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_list_account_users_forwards_sort"]
+  },
+  {
+    "id": "TC-IGU-004",
+    "ac": "AC4",
+    "text": "Given the account has more users than fit on one page, When the caller walks the result with next_offset, Then every user is returned exactly once and a page IT Glue cuts short continues exactly where it stopped.",
+    "type": "auto",
+    "tests": ["tests/test_paging_offset.py::test_cut_pages_walked_by_next_offset_return_every_record_once[itglue_list_account_users-/users-args2]"],
+    "notes": "Covered by adding (\"itglue_list_account_users\", \"/users\", {}) to the shared LISTS table in tests/test_paging_offset.py; the parametrized test id's exact suffix depends on LISTS position at implementation time."
+  },
+  {
+    "id": "TC-IGU-005",
+    "ac": "AC5",
+    "text": "Given the X-ITGlue-API-Key header is missing, When itglue_list_account_users is called, Then it returns {\"error\": {\"code\": \"not_configured\", ...}} rather than raising.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_missing_credentials_envelope"],
+    "notes": "Already covered generically via the shared run() path (tested today against get_organization); no per-tool duplicate is required since the new tool goes through the same run() helper unmodified. Add a one-line parametrize entry for itglue_list_account_users if the dev leg wants an explicit per-tool assertion."
+  },
+  {
+    "id": "TC-IGU-006",
+    "ac": "AC6",
+    "text": "Given IT Glue returns 429 then 200, When itglue_list_account_users is called, Then it retries once honouring Retry-After and returns the successful envelope; given IT Glue returns 403, Then it returns {\"error\": {\"code\": \"unauthorized\", \"retryable\": false}}.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_error_mapping", "tests/test_handlers.py::test_retries_rate_limit_then_succeeds"],
+    "notes": "Error-code mapping and retry/backoff are exercised generically today against other tools (get_organization / itglue_health_check) through the shared ITGlueClient.request() path; the new tool reuses that path unmodified. Add a dedicated GET /users case if the dev leg wants explicit per-tool coverage."
+  },
+  {
+    "id": "TC-IGU-007",
+    "ac": "AC7",
+    "text": "Given tools/list is queried, When itglue_list_account_users is registered, Then it is present with readOnlyHint true, has no agent_id parameter, is listed in README's Tools table, and no existing tool loses a name or parameter.",
+    "type": "auto",
+    "tests": [
+      "tests/test_tools.py::test_tool_names_match_baseline",
+      "tests/test_tools.py::test_parameters_are_backward_compatible",
+      "tests/test_tools.py::test_annotations",
+      "tests/test_tools.py::test_no_agent_id_parameter"
+    ],
+    "notes": "Requires adding an itglue_list_account_users entry to tests/fixtures/tools_baseline.json in the same change."
+  }
+]
