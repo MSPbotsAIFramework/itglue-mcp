@@ -116,3 +116,39 @@ Fixed the single must-fix (finding 1):
   new `flexible_asset` tools) since no source file was touched in this round.
 - Suggestion (finding 2, tool naming prefix): not addressed — the review itself marked it
   non-blocking and recommended a separate repo-wide ticket, not a fix in this one.
+
+## Round 2 · 2026-10-30 · reviewed dev/PRD-21217 @ b7547e3 (base main @ 544c707)
+
+Verdict: changes requested
+
+### Round 1 fix verification
+
+Finding 1's listed fix holds: `git diff aee0752...b7547e3 -- docs/tickets/PRD-21217.md` shows all 8
+flagged occurrences translated in place with no change to meaning (the four bracket tags and the one
+quoted sentence listed in the Round 1 Fixes section above, each replaced with its English
+translation). `uv run pytest -q` re-run on `b7547e3` in this review: 110 passed (unchanged),
+confirming this round's diff is docs-only as claimed.
+
+### Findings
+
+1. [must-fix] docs/tickets/PRD-21217-review.md:10-13,20-24,36,86-89,101 — this review document is
+   itself part of the repo (`docs/tickets/` ships alongside the rest of the tree per
+   `vendor-mcp-development` SKILL.md:115: ticket docs must be English only, same as the rest of the
+   repo), so SOP §0.4 (repo content must be entirely English, including "other documents", checked by
+   a grep that must return zero matches outside lock files) and `references/mcp-track.md` §4.3's
+   must-fix criterion (no non-English text anywhere in the repo) apply to it the same as any other
+   file. The required grep scan on `b7547e3` returns non-zero: this file's own Round 1 Findings and
+   Round 1 Fixes sections quote the original non-English bracket tags and a non-English sentence from
+   this pipeline's internal SOP/mcp-track.md verbatim (this finding itself avoids reproducing that
+   text, to not repeat the same defect). The Round 1 Fixes note (line 101 area) explicitly raised
+   this as an open question for round 2 to confirm — confirming now: there is no audit-trail
+   exception in SOP §0.4 or the checklist, and the repo fails its own required zero-match grep as
+   long as this text stands. Fix: rewrite the
+   Findings/Fixes prose so it describes the original tags and the quoted phrase in English only
+   (e.g. "the Chinese bracket tags meaning non-blocking/changed/new/new-changed" and "a Chinese
+   sentence meaning 'a missing vendor test account is not a blocker'") instead of reproducing the
+   literal Chinese characters; keep the line numbers and commit references so the record stays
+   traceable without violating the all-English requirement. Re-run the grep above after the edit to
+   confirm it returns zero matches anywhere in the repo.
+
+### Fixes            ← round 3 dev leg appends here
