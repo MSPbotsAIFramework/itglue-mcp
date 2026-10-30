@@ -54,6 +54,18 @@
    "section_type"
   ]
  },
+ "create_flexible_asset": {
+  "params": [
+   "flexible_asset_type_id",
+   "name",
+   "organization_id",
+   "traits"
+  ],
+  "required": [
+   "flexible_asset_type_id",
+   "organization_id"
+  ]
+ },
  "create_location": {
   "params": [
    "address_1",
@@ -124,6 +136,14 @@
   "required": [
    "id",
    "organization_id"
+  ]
+ },
+ "get_flexible_asset": {
+  "params": [
+   "id"
+  ],
+  "required": [
+   "id"
   ]
  },
  "get_location": {
@@ -327,6 +347,17 @@
    "content",
    "document_id",
    "section_id"
+  ]
+ },
+ "update_flexible_asset": {
+  "params": [
+   "archived",
+   "id",
+   "name",
+   "traits"
+  ],
+  "required": [
+   "id"
   ]
  },
  "update_location": {
