@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC-IGA-001",
+    "ac": "AC1",
+    "text": "Given valid credentials and a generic resource type (e.g. documents), When delete_attachment is called, Then it sends DELETE /{resource_type}/{resource_id}/relationships/attachments with body {\"data\": [{\"type\": \"attachments\", \"attributes\": {\"id\": <attachment_id>}}]} and returns {\"id\": \"<attachment_id>\", \"deleted\": true}.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_delete_attachment_sends_expected_request_and_envelope"]
+  },
+  {
+    "id": "TC-IGA-002",
+    "ac": "AC2",
+    "text": "Given resource_type=\"flexible_assets\", When delete_attachment is called, Then it sends the same DELETE shape against the flexible-assets path and returns the same success envelope.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_delete_attachment_on_flexible_asset"]
+  },
+  {
+    "id": "TC-IGA-003",
+    "ac": "AC3",
+    "text": "Given IT Glue returns 404 for the attachment id, When delete_attachment is called, Then it returns {\"error\": {\"code\": \"not_found\", ...}} rather than raising.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_delete_attachment_not_found"]
+  },
+  {
+    "id": "TC-IGA-004",
+    "ac": "AC4",
+    "text": "Given the X-ITGlue-API-Key header is missing, When delete_attachment is called, Then it returns {\"error\": {\"code\": \"not_configured\", ...}} rather than raising.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_missing_credentials_envelope"],
+    "notes": "Covered generically via the shared run() path (asserted today against other tools); delete_attachment goes through the same run() helper unmodified, so no per-tool duplicate is required, but a direct assertion against delete_attachment itself is preferred for a destructive tool -- see test_delete_attachment_missing_credentials if the dev leg adds one."
+  },
+  {
+    "id": "TC-IGA-005",
+    "ac": "AC5",
+    "text": "Given IT Glue returns 429 then 204, When delete_attachment is called, Then it retries once honouring Retry-After and returns {\"id\": ..., \"deleted\": true}; given IT Glue returns 403, Then it returns {\"error\": {\"code\": \"unauthorized\", \"retryable\": false}}.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_error_mapping", "tests/test_handlers.py::test_delete_attachment_retries_rate_limit_then_succeeds"],
+    "notes": "Error-code mapping and retry/backoff are exercised generically against other tools through the shared ITGlueClient.request() path; delete_attachment reuses that path unmodified. A dedicated retry test against delete_attachment itself is listed because it is the only destructive new tool in this ticket and its 204-on-success path (api.py's 'no content -> None' branch) is worth a direct assertion."
+  },
+  {
+    "id": "TC-IGA-006",
+    "ac": "AC6",
+    "text": "Given tools/list is queried, When delete_attachment is registered, Then it is present with destructiveHint true and readOnlyHint false, has no agent_id parameter, is listed in README's Tools table, and no existing tool loses a name or parameter.",
+    "type": "auto",
+    "tests": [
+      "tests/test_tools.py::test_tool_names_match_baseline",
+      "tests/test_tools.py::test_parameters_are_backward_compatible",
+      "tests/test_tools.py::test_annotations",
+      "tests/test_tools.py::test_no_agent_id_parameter"
+    ],
+    "notes": "Requires adding a delete_attachment entry to tests/fixtures/tools_baseline.json and bumping the two hardcoded tool-count assertions in tests/test_middleware.py (37 -> 38) in the same change."
+  }
+]
