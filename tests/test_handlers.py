@@ -38,6 +38,60 @@ async def test_search_organizations_paging_and_filters(call):
 
 
 @respx.mock
+async def test_list_account_users_returns_envelope_with_expected_fields(call):
+    respx.get(f"{BASE}/users").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "data": [
+                    doc(
+                        "users",
+                        1,
+                        **{
+                            "first-name": "Jane",
+                            "last-name": "Doe",
+                            "email": "jane@example.com",
+                            "role-name": "Administrator",
+                            "my-glue": False,
+                            "last-sign-in-at": "2026-10-28T09:00:00Z",
+                        },
+                    )
+                ]
+            },
+        )
+    )
+    out = await call("itglue_list_account_users")
+    assert out["items"] == [
+        {
+            "id": "1",
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "email": "jane@example.com",
+            "role_name": "Administrator",
+            "my_glue": False,
+            "last_sign_in_at": "2026-10-28T09:00:00Z",
+        }
+    ]
+
+
+@respx.mock
+async def test_list_account_users_forwards_filters(call):
+    route = respx.get(f"{BASE}/users").mock(return_value=httpx.Response(200, json={"data": []}))
+    await call("itglue_list_account_users", name="Jane Doe", email="jane@example.com", role_name="Administrator")
+    params = route.calls.last.request.url.params
+    assert params["filter[name]"] == "Jane Doe"
+    assert params["filter[email]"] == "jane@example.com"
+    assert params["filter[role_name]"] == "Administrator"
+
+
+@respx.mock
+async def test_list_account_users_forwards_sort(call):
+    route = respx.get(f"{BASE}/users").mock(return_value=httpx.Response(200, json={"data": []}))
+    await call("itglue_list_account_users", sort="-created_at")
+    assert route.calls.last.request.url.params["sort"] == "-created_at"
+
+
+@respx.mock
 async def test_missing_credentials_envelope(call):
     from itglue_mcp import credentials
 

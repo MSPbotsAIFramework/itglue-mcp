@@ -44,6 +44,7 @@ LISTS = [
     ("search_documents", "/organizations/7/relationships/documents", {"organization_id": 7}),
     ("list_document_folders", "/organizations/7/relationships/document_folders", {"organization_id": 7}),
     ("search_user_metrics", "/user_metrics", {}),
+    ("itglue_list_account_users", "/users", {}),
 ]
 
 
