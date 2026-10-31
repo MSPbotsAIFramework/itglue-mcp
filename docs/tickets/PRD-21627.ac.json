@@ -1,0 +1,62 @@
+[
+  {
+    "id": "TC-IGF-001",
+    "ac": "AC1",
+    "text": "Given a valid flexible_asset_type_id, name and kind, When itglue_create_flexible_asset_field is called, Then the field is created and the tool returns an envelope whose id matches the one IT Glue returned.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_create_flexible_asset_field_happy_path"]
+  },
+  {
+    "id": "TC-IGF-002",
+    "ac": "AC2",
+    "text": "Given only flexible_asset_type_id, name and kind are passed, When itglue_create_flexible_asset_field is called, Then the upstream request body's attributes contain exactly name and kind -- no optional fields are sent unset.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_create_flexible_asset_field_omits_unset_optional_fields"]
+  },
+  {
+    "id": "TC-IGF-003",
+    "ac": "AC3",
+    "text": "Given kind=\"Tag\" and tag_type=\"Contacts\" (the gap register's own example), When itglue_create_flexible_asset_field is called, Then both values are forwarded unchanged to IT Glue with no local validation.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_create_flexible_asset_field_forwards_kind_and_tag_type"]
+  },
+  {
+    "id": "TC-IGF-004",
+    "ac": "AC4",
+    "text": "Given a non-numeric flexible_asset_type_id, When itglue_create_flexible_asset_field is called, Then it returns {\"error\": {\"code\": \"invalid_argument\"}} without calling IT Glue; given a numeric but non-existent type id, IT Glue's 404 is mapped to {\"error\": {\"code\": \"not_found\"}}.",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_create_flexible_asset_field_rejects_non_numeric_type_id",
+      "tests/test_flexible_assets.py::test_create_flexible_asset_field_not_found_returns_envelope"
+    ]
+  },
+  {
+    "id": "TC-IGF-005",
+    "ac": "AC5",
+    "text": "Given the X-ITGlue-API-Key header is missing, When itglue_create_flexible_asset_field is called, Then it returns {\"error\": {\"code\": \"not_configured\", ...}} rather than raising.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_missing_credentials_envelope"],
+    "notes": "Covered generically via the shared run() path (asserted today against get_organization); the new tool goes through the same run() helper unmodified, so no per-tool duplicate is required beyond confirming the live tools/list smoke test during dev self-test."
+  },
+  {
+    "id": "TC-IGF-006",
+    "ac": "AC6",
+    "text": "Given IT Glue returns 429 then 201, When itglue_create_flexible_asset_field is called, Then it retries once honouring Retry-After and returns the successful envelope; given IT Glue returns 403, Then it returns {\"error\": {\"code\": \"unauthorized\", \"retryable\": false}}.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_error_mapping", "tests/test_handlers.py::test_retries_rate_limit_then_succeeds"],
+    "notes": "Error-code mapping and retry/backoff are exercised generically through the shared ITGlueClient.request() path; the new tool reuses that path unmodified, so no per-tool duplicate is required."
+  },
+  {
+    "id": "TC-IGF-007",
+    "ac": "AC7",
+    "text": "Given tools/list is queried, When itglue_create_flexible_asset_field is registered, Then it is present with readOnlyHint false, destructiveHint false, no agent_id parameter, is listed in README's Tools table, and no existing tool loses a name or parameter.",
+    "type": "auto",
+    "tests": [
+      "tests/test_tools.py::test_tool_names_match_baseline",
+      "tests/test_tools.py::test_parameters_are_backward_compatible",
+      "tests/test_tools.py::test_no_agent_id_parameter",
+      "tests/test_flexible_assets.py::test_create_flexible_asset_field_annotations"
+    ],
+    "notes": "Requires adding an itglue_create_flexible_asset_field entry to tests/fixtures/tools_baseline.json in the same change. test_annotations in test_tools.py only spot-checks a fixed tool-name list today and is not extended; the readOnlyHint/destructiveHint claim is checked by the new per-tool test instead."
+  }
+]
