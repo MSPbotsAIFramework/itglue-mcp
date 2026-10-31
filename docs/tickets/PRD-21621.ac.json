@@ -1,0 +1,78 @@
+[
+    {
+        "id": "TC1",
+        "ac": "AC1",
+        "text": "Given organization_id, flexible_asset_type_id and traits with no archived/restricted, when create_flexible_asset is called, then the request sent to IT Glue and the tool's response are unchanged from before this ticket.",
+        "type": "auto",
+        "tests": [
+            "tests/test_flexible_assets.py::test_create_flexible_asset_happy_path"
+        ],
+        "source": "design"
+    },
+    {
+        "id": "TC2",
+        "ac": "AC2",
+        "text": "Given archived=true passed to create_flexible_asset, when it is called, then the POST body sent to IT Glue includes \"archived\": true, and the response reflects archived: true.",
+        "type": "auto",
+        "tests": [
+            "tests/test_flexible_assets.py::test_create_flexible_asset_sets_archived_and_restricted"
+        ],
+        "source": "design"
+    },
+    {
+        "id": "TC3",
+        "ac": "AC3",
+        "text": "Given restricted=true passed to create_flexible_asset, when it is called, then the POST body sent to IT Glue includes \"restricted\": true, and the response reflects restricted: true.",
+        "type": "auto",
+        "tests": [
+            "tests/test_flexible_assets.py::test_create_flexible_asset_sets_archived_and_restricted"
+        ],
+        "source": "design"
+    },
+    {
+        "id": "TC4",
+        "ac": "AC4",
+        "text": "Given archived and restricted are both omitted, when create_flexible_asset is called, then neither key appears in the request body sent to IT Glue.",
+        "type": "auto",
+        "tests": [
+            "tests/test_flexible_assets.py::test_create_flexible_asset_happy_path"
+        ],
+        "source": "design"
+    },
+    {
+        "id": "TC5",
+        "ac": "AC5",
+        "text": "Given a trait value containing HTML markup, when create_flexible_asset is called, then the value is forwarded to IT Glue unmodified (not escaped or stripped).",
+        "type": "auto",
+        "tests": [
+            "tests/test_flexible_assets.py::test_create_flexible_asset_forwards_html_trait_value_unmodified"
+        ],
+        "source": "design"
+    },
+    {
+        "id": "TC6",
+        "ac": "AC1,AC2,AC3",
+        "text": "Given a real IT Glue tenant, when an agent creates a flexible asset with archived=true and restricted=true, reads it back, and compares against the IT Glue web UI, then both flags match in all three places.",
+        "type": "manual",
+        "steps": [
+            "Call create_flexible_asset with a real organization_id, flexible_asset_type_id, one trait value, archived=true and restricted=true",
+            "Call get_flexible_asset with the returned id and record the response",
+            "Open the asset in the IT Glue web UI and compare the Archived and Restricted (MyGlue visibility) flags against the get_flexible_asset response"
+        ],
+        "expect": "The IT Glue UI's Archived and Restricted flags match the get_flexible_asset response, and both match the values passed to create_flexible_asset (archived=true, restricted=true).",
+        "result": "untested",
+        "evidence": "",
+        "notes": "Needs a real vendor account; no IT Glue test tenant is available to this pipeline. Not a blocker per references/mcp-track.md §3.",
+        "source": "design"
+    },
+    {
+        "id": "TC7",
+        "ac": "AC7",
+        "text": "Given a forced IT Glue error response during create_flexible_asset with a trait value that looks like a credential, when the error is returned, then the error envelope's message text does not contain that trait value, with archived/restricted also passed.",
+        "type": "auto",
+        "tests": [
+            "tests/test_flexible_assets.py::test_create_flexible_asset_error_does_not_leak_trait_values"
+        ],
+        "source": "design"
+    }
+]
