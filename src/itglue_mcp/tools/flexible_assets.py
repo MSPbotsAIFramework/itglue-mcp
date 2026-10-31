@@ -112,12 +112,16 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         flexible_asset_type_id: Annotated[int, Field(description="Flexible asset type ID.")],
         name: Name = None,
         traits: Traits = None,
+        archived: Annotated[bool | None, Field(description="Archived flag.")] = None,
+        restricted: Annotated[bool | None, Field(description="Restricted (MyGlue-visibility) flag.")] = None,
     ) -> str:
         values = dict(
             organization_id=organization_id,
             flexible_asset_type_id=flexible_asset_type_id,
             name=name,
             traits=traits,
+            archived=archived,
+            restricted=restricted,
         )
 
         async def handler(client: api.ITGlueClient):

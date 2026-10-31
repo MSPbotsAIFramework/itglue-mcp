@@ -76,6 +76,43 @@ async def test_create_flexible_asset_happy_path(call):
 
 
 @respx.mock
+async def test_create_flexible_asset_sets_archived_and_restricted(call):
+    route = respx.post(f"{BASE}/flexible_assets").mock(
+        return_value=httpx.Response(201, json={"data": asset(1002, archived=True, restricted=True)})
+    )
+    out = await call(
+        "create_flexible_asset",
+        organization_id=3,
+        flexible_asset_type_id=456,
+        traits={"domain-name": "corp.example.com"},
+        archived=True,
+        restricted=True,
+    )
+    body = json.loads(route.calls.last.request.content)
+    assert body["data"]["attributes"]["archived"] is True
+    assert body["data"]["attributes"]["restricted"] is True
+    assert out["archived"] is True
+    assert out["restricted"] is True
+
+
+@respx.mock
+async def test_create_flexible_asset_forwards_html_trait_value_unmodified(call):
+    html_value = "<table><tr><td>key</td><td>value</td></tr></table>"
+    route = respx.post(f"{BASE}/flexible_assets").mock(
+        return_value=httpx.Response(201, json={"data": asset(1003, traits={"rewst-org-variables": html_value})})
+    )
+    out = await call(
+        "create_flexible_asset",
+        organization_id=3,
+        flexible_asset_type_id=456,
+        traits={"rewst-org-variables": html_value},
+    )
+    body = json.loads(route.calls.last.request.content)
+    assert body["data"]["attributes"]["traits"] == {"rewst-org-variables": html_value}
+    assert out["traits"] == {"rewst-org-variables": html_value}
+
+
+@respx.mock
 async def test_create_flexible_asset_error_does_not_leak_trait_values(call, caplog):
     respx.post(f"{BASE}/flexible_assets").mock(side_effect=RuntimeError(f"boom {SECRET_LOOKING_TRAIT}"))
     with caplog.at_level(logging.DEBUG):
@@ -84,6 +121,8 @@ async def test_create_flexible_asset_error_does_not_leak_trait_values(call, capl
             organization_id=3,
             flexible_asset_type_id=456,
             traits={"api-key": SECRET_LOOKING_TRAIT},
+            archived=True,
+            restricted=True,
         )
     assert out["error"]["code"] == "upstream_error"
     assert SECRET_LOOKING_TRAIT not in json.dumps(out)

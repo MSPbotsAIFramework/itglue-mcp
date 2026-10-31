@@ -7,7 +7,9 @@
         "tests": [
             "tests/test_flexible_assets.py::test_create_flexible_asset_happy_path"
         ],
-        "source": "design"
+        "source": "design",
+        "result": "pass",
+        "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_happy_path -> 1 passed (also confirms AC4: body has no archived/restricted keys when omitted)"
     },
     {
         "id": "TC2",
@@ -17,7 +19,9 @@
         "tests": [
             "tests/test_flexible_assets.py::test_create_flexible_asset_sets_archived_and_restricted"
         ],
-        "source": "design"
+        "source": "design",
+        "result": "pass",
+        "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_sets_archived_and_restricted -> 1 passed; asserts POST body[\"data\"][\"attributes\"][\"archived\"] is True and response [\"archived\"] is True"
     },
     {
         "id": "TC3",
@@ -27,7 +31,9 @@
         "tests": [
             "tests/test_flexible_assets.py::test_create_flexible_asset_sets_archived_and_restricted"
         ],
-        "source": "design"
+        "source": "design",
+        "result": "pass",
+        "evidence": "same test as TC2 (archived and restricted asserted together) -> 1 passed; asserts POST body[\"data\"][\"attributes\"][\"restricted\"] is True and response [\"restricted\"] is True"
     },
     {
         "id": "TC4",
@@ -37,7 +43,9 @@
         "tests": [
             "tests/test_flexible_assets.py::test_create_flexible_asset_happy_path"
         ],
-        "source": "design"
+        "source": "design",
+        "result": "pass",
+        "evidence": "covered by test_create_flexible_asset_happy_path: asserted POST body == exact dict with no archived/restricted keys -> 1 passed"
     },
     {
         "id": "TC5",
@@ -47,7 +55,9 @@
         "tests": [
             "tests/test_flexible_assets.py::test_create_flexible_asset_forwards_html_trait_value_unmodified"
         ],
-        "source": "design"
+        "source": "design",
+        "result": "pass",
+        "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_forwards_html_trait_value_unmodified -> 1 passed; HTML trait value round-trips unescaped in request body and response"
     },
     {
         "id": "TC6",
@@ -73,6 +83,8 @@
         "tests": [
             "tests/test_flexible_assets.py::test_create_flexible_asset_error_does_not_leak_trait_values"
         ],
-        "source": "design"
+        "source": "design",
+        "result": "pass",
+        "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_error_does_not_leak_trait_values (re-run with archived/restricted also passed) -> 1 passed; secret trait value absent from error envelope and caplog"
     }
 ]
