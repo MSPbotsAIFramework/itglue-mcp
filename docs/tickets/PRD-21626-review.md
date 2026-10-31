@@ -1,5 +1,38 @@
 # PRD-21626 · Code review
 
+## Round 2 · 2026-10-31 · reviewed dev/PRD-21626 @ ec4cf51 (base ae5c844)
+
+Status: frozen @ ec4cf51
+
+Verdict: approved
+
+### Findings
+
+None. Scope for this round is the round-1 must-fix only (`tests/test_tools.py:36-42` ruff format),
+plus the "Fixes" section appended to this file in the same commit (`ec4cf51`). Verified
+independently against the review's own commands (not just re-stating the diff's claims):
+
+- `uv run ruff format --check .` on `dev/PRD-21626 @ ec4cf51`: 4 files flagged
+  (`docs/tickets/PRD-21624.md`, `src/itglue_mcp/_json.py`, `tests/test_handlers.py`,
+  `tests/test_paging_offset.py`) — same as independently re-run on pristine base `ae5c844`
+  (also 4, same files). `tests/test_tools.py` no longer appears. Round-1 must-fix is fixed.
+- `uv run ruff check .`: 3 errors on both `ae5c844` and `ec4cf51` — same 3 lines
+  (`tests/test_handlers.py:5` `I001`, `tests/test_handlers.py:221` `E501`,
+  `tests/test_passwords.py:5` `I001`), 0 new. Matches round 1's own finding-3 correction.
+- `uv run pytest -q`: 140 passed, 0 failed on `ec4cf51` — no regressions.
+- Chinese-text scan (`grep -rnP '[\x{4e00}-\x{9fff}]' --exclude-dir=.git --exclude-dir=.venv .`):
+  no hits outside the pre-existing `docs/tickets/PRD-2162*.md` files.
+- `git diff ae5c844...ec4cf51 --stat`: touches only the 9 files round 1 already reviewed plus the
+  review doc itself (`README.md`, `docs/tickets/PRD-21626{.ac.json,.md,-review.md}`,
+  `src/itglue_mcp/tools/attachments.py`, `tests/{fixtures/tools_baseline.json,test_handlers.py,
+  test_middleware.py,test_tools.py}`) — no new files, no scope creep from the round-1 fix.
+- The two round-1 suggestions (`docs/changes/` entry; Self-test's `ruff check` file-attribution
+  typo) were left unaddressed, as the Fixes section says. Both remain suggestions, not must-fix —
+  the `docs/changes/` convention gap is a repo-convention nit, not a BA-acceptance or runtime risk;
+  the Self-test typo is already corrected in this file (round 1 finding 3) for any future reader.
+
+No new must-fix. Approved.
+
 ## Round 1 · 2026-10-31 · reviewed dev/PRD-21626 @ 7e5d2c5 (base ae5c844)
 
 Verdict: changes requested
