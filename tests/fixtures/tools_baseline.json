@@ -148,6 +148,14 @@
    "id"
   ]
  },
+ "get_flexible_asset_type": {
+  "params": [
+   "id"
+  ],
+  "required": [
+   "id"
+  ]
+ },
  "get_location": {
   "params": [
    "id"

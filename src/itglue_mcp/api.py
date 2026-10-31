@@ -180,6 +180,14 @@ def item(payload: dict[str, Any] | None, drop: set[str] | None = None) -> dict[s
     return flatten(data, drop)
 
 
+def included(payload: dict[str, Any] | None, type_: str | None = None) -> list[dict[str, Any]]:
+    """Flattened `included` sideload resources from a JSON:API response that used `?include=`."""
+    rows = (payload or {}).get("included") or []
+    if type_:
+        rows = [r for r in rows if r.get("type") == type_]
+    return [flatten(r) for r in rows]
+
+
 def page(
     payload: dict[str, Any] | None,
     page_number: int,
