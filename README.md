@@ -131,6 +131,9 @@ Behaviour notes:
   Only the fields passed are sent to IT Glue; nothing else is changed or cleared.
 - `password` parameters are marked secret in the tool schema (`format: password`, `writeOnly`); the
   server never logs them and masks them in error messages.
+- `create_flexible_asset` also accepts optional `archived` and `restricted` flags, sent to IT Glue
+  only when passed (same "only send what was set" behaviour `update_flexible_asset` already has for
+  `archived`).
 - IT Glue has no server-side name filter for documents or folders and no username filter for
   passwords; those filters are applied to the returned page.
 - `itglue_list_account_users`'s `filter[name]` is an exact match on IT Glue's side, unlike the

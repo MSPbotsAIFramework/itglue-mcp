@@ -59,7 +59,9 @@
    "flexible_asset_type_id",
    "name",
    "organization_id",
-   "traits"
+   "traits",
+   "archived",
+   "restricted"
   ],
   "required": [
    "flexible_asset_type_id",
