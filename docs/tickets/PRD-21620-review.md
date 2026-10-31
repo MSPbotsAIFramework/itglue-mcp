@@ -135,3 +135,44 @@ Fixed the single must-fix (finding 1):
   file was changed in this round, so no new scoped lint surface exists.
 - Test cases: unaffected by a docs-only fix — all 9 cases (TC-IGT-001..009) remain as recorded in
   the original Self-test (`.ac.json` unchanged, `result`/`evidence` fields untouched).
+
+## Round 2 · 2026-10-31 · reviewed dev/PRD-21620 @ a191c6a (base main @ 788bcac)
+
+Status: frozen @ a191c6a
+
+Verdict: approved
+
+### Fix verification (round 1 finding 1)
+
+- Confirmed the diff between the round-1 reviewed commit and this one
+  (`git diff 00391ae..a191c6a`) touches only `docs/tickets/PRD-21620.md` and
+  `docs/tickets/PRD-21620-review.md` — no source or test file changed, matching the dev leg's
+  own claim that this was a docs-only translation round.
+- Read every one of the 6 edits line by line against the round-1 finding: each is a direct,
+  meaning-preserving translation (`[已假设]` → `[assumed]`, `[不阻塞]` → `[non-blocking]` ×2, the
+  AC4 and Current-state quoted phrases replaced by their English meaning already established
+  inline, the redundant Chinese "等" dropped next to its own English gloss). No AC, scope, or
+  conclusion text changed — this is translation, not a design rewrite, so it did not need to go
+  back to the design leg.
+- Independently re-ran `grep -rnP '[\x{4e00}-\x{9fff}]' --exclude-dir=.git --exclude-dir=.venv .`
+  on `a191c6a`: **zero matches outside this review file**, and zero matches in
+  `docs/tickets/PRD-21620.md` itself. The only remaining Chinese in the tree is this review file's
+  own Round 1 verbatim citation of the original defect text, which is a historical record of a
+  past finding, not product code, design content, or documentation the repo ships — same
+  acceptance as `docs/tickets/PRD-21217-review.md`.
+- Independently re-ran the gates on `a191c6a`: `uv sync` → 0; `uv run pytest -q` → **129 passed,
+  0 failed**; `uv run ruff check .` and `uv run ruff format --check .` on the full tree → 3
+  pre-existing errors / 3 pre-existing files needing reformat (`tests/test_handlers.py`,
+  `tests/test_passwords.py` for check; `src/itglue_mcp/_json.py`, `tests/test_handlers.py`,
+  `tests/test_paging_offset.py` for format) — none of these five files are in this ticket's diff
+  (`git diff 788bcac..a191c6a --name-only`), confirming the baseline is unrelated and unchanged by
+  this round. No new must-fix.
+- No new findings. Round 1's "What passed review" section (correctness, AC1-AC8, reuse, backward
+  compatibility, README Connector section, no migration, no cross-repo dependency) is unaffected
+  by a docs-only round and still holds — spot-checked `src/itglue_mcp/tools/flexible_assets.py`
+  (`_field_relationship_item`, `itglue_create_flexible_asset_type`) and
+  `src/itglue_mcp/api.py:233-246` (`attributes()` with `relationships`) again directly; unchanged
+  since round 1 and still additive/backward-compatible.
+
+Conclusion: the single must-fix from round 1 is fixed and independently verified; no new
+must-fix. Approved for merge into `main`, INT publish, and connector wiki check.
