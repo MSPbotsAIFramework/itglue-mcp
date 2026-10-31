@@ -91,3 +91,47 @@ Verdict: changes requested
   touched — `REVIEW.md` §2 items 5 and 11 do not apply.
 - **No cross-repo header/field compatibility concern** (`references/mcp-track.md` §1.2): this
   ticket touches a single MCP repo with no platform or sibling-MCP dependency.
+
+### Round 1 · Fixes (review rework, 2026-10-31)
+
+Fixed the single must-fix (finding 1):
+
+- `docs/tickets/PRD-21620.md` — translated all 6 flagged occurrences to English, in place, pure
+  translation with no change to the design's substance:
+  - Line 17 (Current state): removed the quoted Chinese sentence from the ticket's "MSPbots 现状"
+    note and its own English translation already given inline — the inline translation was kept
+    verbatim as the sentence's full text, and the quoted note label itself translated to "MSPbots
+    current state".
+  - Line 56 (AC4): the quoted Chinese phrase from the ticket's description (`创建 IT Glue 灵活资产类型及其字段`)
+    replaced with its English meaning, "create the IT Glue flexible asset type and its fields".
+  - Line 64 (Open questions): `[已假设]` → `[assumed]`.
+  - Line 65 (Open questions): `[不阻塞]` → `[non-blocking]`; also dropped the redundant Chinese "等"
+    next to its own English gloss "etc." in the same bullet.
+  - Line 66 (Open questions): `[不阻塞]` → `[non-blocking]`.
+  - Also updated the Self-test "Pre-existing issues found but not touched" bullet (original line
+    321-330, not itself one of the 6 flagged lines) so it no longer quotes the original Chinese
+    phrase or bracket tags verbatim — it now describes them without reproducing the characters, and
+    states the issue was found pre-existing by this ticket's own design commit, flagged by this
+    review round, and fixed here. This bullet was not in the finding's line list but quoted the same
+    text and would otherwise go stale and still fail the grep gate after the fix; translating it is
+    the same no-substance-change class of edit the finding authorized, not a new must-fix (same
+    precedent as `docs/tickets/PRD-21217.md` round 1's equivalent bullet).
+  - Did not change the frozen header SHA reference mechanism: `docs/tickets/PRD-21620.md` carries
+    `Status: frozen @ e5d28c5` from the original dev leg; this review-rework edit is layered on top
+    per `legs/dev.md` S1 "评审返工" (fix on the same branch, document the fix in this review file,
+    main document otherwise left alone).
+- Verification: `grep -rnP '[\x{4e00}-\x{9fff}]' --exclude-dir=.git --exclude-dir=.venv .` now
+  returns **zero matches in `docs/tickets/PRD-21620.md`**, and zero matches anywhere outside this
+  review file. The only remaining Chinese in the repository is in this file's own Round 1 findings
+  above (the reviewer's verbatim citation of the original defect text and of this pipeline's own
+  Chinese-language internal SOP/reference docs as evidence) — the historical record of what round 1
+  found, left unedited (review findings are not revised after the fact); it is not product code,
+  design content, or documentation the repo ships. Same acceptance as
+  `docs/tickets/PRD-21217-review.md` round 1's equivalent note.
+- Gates re-run on the fixed commit (docs-only change; code and tests untouched since round 1):
+  `uv sync` — 0; `uv run pytest -q` — **129 passed**, 0 failed; `uv run ruff check .` / `uv run ruff
+  format --check .` on the full tree — same pre-existing baseline as round 1 (3 lint errors / 3
+  files needing reformat, none in files this ticket's dev leg touched or added); no source or test
+  file was changed in this round, so no new scoped lint surface exists.
+- Test cases: unaffected by a docs-only fix — all 9 cases (TC-IGT-001..009) remain as recorded in
+  the original Self-test (`.ac.json` unchanged, `result`/`evidence` fields untouched).
