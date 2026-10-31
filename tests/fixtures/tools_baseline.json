@@ -104,6 +104,18 @@
    "password"
   ]
  },
+ "delete_attachment": {
+  "params": [
+   "attachment_id",
+   "resource_id",
+   "resource_type"
+  ],
+  "required": [
+   "attachment_id",
+   "resource_id",
+   "resource_type"
+  ]
+ },
  "delete_document": {
   "params": [
    "document_id"

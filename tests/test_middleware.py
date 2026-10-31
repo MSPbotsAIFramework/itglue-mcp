@@ -51,7 +51,7 @@ def test_malformed_region_or_base_url_does_not_block_initialize_or_tools_list(cl
     assert client.post("/mcp", json=INIT, headers=h).status_code == 200
     r = client.post("/mcp", json=LIST, headers=h)
     assert r.status_code == 200
-    assert len(r.json()["result"]["tools"]) == 39
+    assert len(r.json()["result"]["tools"]) == 40
 
 
 @pytest.mark.parametrize("key", ["", "   "])
@@ -65,7 +65,7 @@ def test_tools_list_is_stateless(client):
     h = {**HEADERS, "x-itglue-api-key": "k"}
     r = client.post("/mcp", json=LIST, headers=h)
     assert r.status_code == 200
-    assert len(r.json()["result"]["tools"]) == 39
+    assert len(r.json()["result"]["tools"]) == 40
 
 
 @pytest.mark.parametrize(
