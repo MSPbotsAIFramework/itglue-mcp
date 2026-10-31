@@ -1,0 +1,83 @@
+[
+  {
+    "id": "TC-IGLC-001",
+    "ac": "AC1",
+    "text": "Given valid credentials and no filters, When itglue_list_contacts is called, Then it returns the standard list envelope and each item has id, first_name, last_name, email, organization_id and title.",
+    "type": "auto",
+    "tests": [
+      "tests/test_handlers.py::test_list_contacts_returns_envelope_with_expected_fields"
+    ]
+  },
+  {
+    "id": "TC-IGLC-002",
+    "ac": "AC2",
+    "text": "Given organization_id and email are passed, When itglue_list_contacts is called, Then they are forwarded as filter[organization_id] and filter[email] on the GET /contacts request.",
+    "type": "auto",
+    "tests": [
+      "tests/test_handlers.py::test_list_contacts_forwards_organization_and_email_filters"
+    ]
+  },
+  {
+    "id": "TC-IGLC-003",
+    "ac": "AC3",
+    "text": "Given name, first_name, last_name and contact_type_id are passed, When itglue_list_contacts is called, Then each is forwarded as filter[name], filter[first_name], filter[last_name] and filter[contact_type_id].",
+    "type": "auto",
+    "tests": [
+      "tests/test_handlers.py::test_list_contacts_forwards_name_and_type_filters"
+    ]
+  },
+  {
+    "id": "TC-IGLC-004",
+    "ac": "AC4",
+    "text": "Given sort=\"-updated_at\", When itglue_list_contacts is called, Then the sort query parameter is forwarded unchanged to IT Glue (no local validation, matching every other list tool).",
+    "type": "auto",
+    "tests": [
+      "tests/test_handlers.py::test_list_contacts_forwards_sort"
+    ]
+  },
+  {
+    "id": "TC-IGLC-005",
+    "ac": "AC5",
+    "text": "Given an organization has more contacts than fit on one page, When the caller walks the result with next_offset, Then every contact is returned exactly once and a page IT Glue cuts short continues exactly where it stopped.",
+    "type": "auto",
+    "tests": [
+      "tests/test_paging_offset.py::test_cut_pages_walked_by_next_offset_return_every_record_once"
+    ],
+    "notes": "Covered by adding (\"itglue_list_contacts\", \"/contacts\", {}) to the shared LISTS table in tests/test_paging_offset.py; no new test code needed beyond the table entry."
+  },
+  {
+    "id": "TC-IGLC-006",
+    "ac": "AC6",
+    "text": "Given the X-ITGlue-API-Key header is absent, When itglue_list_contacts is called, Then it returns {\"error\": {\"code\": \"not_configured\", ...}}, not an exception.",
+    "type": "auto",
+    "tests": [
+      "tests/test_handlers.py::test_missing_credentials_envelope"
+    ],
+    "notes": "Inherited generic coverage: this shared test already exercises every tool (including itglue_list_contacts once registered) through the common run()/ITGlueClient path; no per-tool duplicate needed."
+  },
+  {
+    "id": "TC-IGLC-007",
+    "ac": "AC7",
+    "text": "Given IT Glue returns 429 then 200, When itglue_list_contacts is called, Then it retries once (honouring Retry-After) and returns the successful envelope; given IT Glue returns 403, it returns {\"error\": {\"code\": \"unauthorized\", \"retryable\": false}}.",
+    "type": "auto",
+    "tests": [
+      "tests/test_handlers.py::test_error_mapping"
+    ],
+    "notes": "Inherited generic coverage via the shared run()/ITGlueClient.request() error-mapping path, same as every other tool; no per-tool duplicate needed."
+  },
+  {
+    "id": "TC-IGLC-008",
+    "ac": "AC8",
+    "text": "Given tools/list is queried, When itglue_list_contacts is registered, Then it is present with readOnlyHint: true, no agent_id parameter, is listed in README.md's Tools table, and every previously-registered tool is still present with its previous parameters.",
+    "type": "auto",
+    "tests": [
+      "tests/test_tools.py::test_tool_names_match_baseline",
+      "tests/test_tools.py::test_parameters_are_backward_compatible",
+      "tests/test_tools.py::test_annotations",
+      "tests/test_tools.py::test_no_agent_id_parameter",
+      "tests/test_middleware.py::test_malformed_region_or_base_url_does_not_block_initialize_or_tools_list",
+      "tests/test_middleware.py::test_tools_list_is_stateless"
+    ],
+    "notes": "Covered by adding the itglue_list_contacts entry to tests/fixtures/tools_baseline.json and bumping the two hardcoded tools/list counts in tests/test_middleware.py from 37 to 38; no new test code needed beyond those two edits."
+  }
+]
