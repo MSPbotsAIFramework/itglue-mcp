@@ -33,7 +33,14 @@ async def test_descriptions_are_concise(mcp):
 
 async def test_annotations(mcp):
     tools = await _tools(mcp)
-    for name in ("delete_document", "delete_document_section", "archive_document", "unarchive_document"):
+    destructive = (
+        "delete_document",
+        "delete_document_section",
+        "archive_document",
+        "unarchive_document",
+        "delete_attachment",
+    )
+    for name in destructive:
         assert tools[name].annotations.destructiveHint is True, name
     for name in ("search_organizations", "get_password", "itglue_health_check", "list_attachments"):
         assert tools[name].annotations.readOnlyHint is True, name
