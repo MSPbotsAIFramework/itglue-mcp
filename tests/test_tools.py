@@ -37,6 +37,10 @@ async def test_annotations(mcp):
         assert tools[name].annotations.destructiveHint is True, name
     for name in ("search_organizations", "get_password", "itglue_health_check", "list_attachments"):
         assert tools[name].annotations.readOnlyHint is True, name
+    new_type_tool = tools["itglue_create_flexible_asset_type"].annotations
+    assert new_type_tool.readOnlyHint is False
+    assert new_type_tool.destructiveHint is False
+    assert new_type_tool.idempotentHint is False
 
 
 async def test_no_agent_id_parameter(mcp):

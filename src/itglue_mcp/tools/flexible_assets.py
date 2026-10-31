@@ -26,6 +26,27 @@ def _trait_secrets(traits: dict[str, Any] | None) -> list[str]:
     return [v for v in (traits or {}).values() if isinstance(v, str)]
 
 
+def _field_relationship_item(field: dict[str, Any], index: int) -> dict[str, Any]:
+    """One `flexible-asset-fields` relationship item, validated before any HTTP call (AC5)."""
+    if not isinstance(field, dict) or not field.get("name"):
+        raise ToolInputError(f"fields[{index}] is missing required 'name'.")
+    if not field.get("kind"):
+        raise ToolInputError(f"fields[{index}] is missing required 'kind'.")
+    attrs = {k.replace("_", "-"): v for k, v in field.items() if v is not None}
+    return {"type": "flexible_asset_fields", "attributes": attrs}
+
+
+def _field_secrets(fields: list[dict[str, Any]] | None) -> list[str]:
+    # A field's default_value can carry a secret (e.g. a Password-kind field's default), same
+    # posture as a trait value.
+    out = []
+    for f in fields or []:
+        value = f.get("default_value") if isinstance(f, dict) else None
+        if isinstance(value, str):
+            out.append(value)
+    return out
+
+
 def register(mcp: FastMCP, settings: Settings) -> None:
     @mcp.tool(
         name="list_flexible_asset_types",
@@ -112,12 +133,16 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         flexible_asset_type_id: Annotated[int, Field(description="Flexible asset type ID.")],
         name: Name = None,
         traits: Traits = None,
+        archived: Annotated[bool | None, Field(description="Archived flag.")] = None,
+        restricted: Annotated[bool | None, Field(description="Restricted (MyGlue-visibility) flag.")] = None,
     ) -> str:
         values = dict(
             organization_id=organization_id,
             flexible_asset_type_id=flexible_asset_type_id,
             name=name,
             traits=traits,
+            archived=archived,
+            restricted=restricted,
         )
 
         async def handler(client: api.ITGlueClient):
@@ -149,3 +174,45 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             return api.item(await client.patch(path, api.attributes("flexible_assets", values)))
 
         return await run(settings, handler, secrets=_trait_secrets(traits))
+
+    @mcp.tool(
+        name="itglue_create_flexible_asset_type",
+        description=(
+            "Create a flexible asset type (a custom record type, e.g. 'BitLocker (Rewst)') in IT Glue, "
+            "optionally together with its field definitions in the same call."
+        ),
+        annotations=CREATE,
+        structured_output=False,
+    )
+    async def itglue_create_flexible_asset_type(
+        name: Annotated[str, Field(description="Flexible asset type name.")],
+        enabled: Annotated[bool | None, Field(description="Whether the type is enabled.")] = None,
+        description: Annotated[str | None, Field(description="Type description.")] = None,
+        icon: Annotated[str | None, Field(description="IT Glue icon name.")] = None,
+        fields: Annotated[
+            list[dict[str, Any]] | None,
+            Field(
+                description=(
+                    "Fields to create with the type. Each item needs 'name' and 'kind' (e.g. Text, "
+                    "Textbox, Password, Tag, Checkbox, Date, Number -- not validated locally, IT Glue "
+                    "rejects an invalid value); optional per field: order, required, show_in_list, "
+                    "use_for_title, tag_type, hint, default_value."
+                )
+            ),
+        ] = None,
+    ) -> str:
+        type_values = dict(name=name, enabled=enabled, description=description, icon=icon)
+
+        async def handler(client: api.ITGlueClient):
+            field_items = [_field_relationship_item(f, i) for i, f in enumerate(fields or [])]
+            relationships = {"flexible-asset-fields": field_items} if field_items else None
+            body = api.attributes("flexible_asset_types", type_values, relationships=relationships)
+            resp = await client.post("/flexible_asset_types", body)
+            result = api.item(resp)
+            created = (((resp or {}).get("data") or {}).get("relationships") or {}).get("flexible-asset-fields") or {}
+            created_fields = created.get("data")
+            if created_fields:
+                result["fields"] = [{"id": f.get("id")} for f in created_fields]
+            return result
+
+        return await run(settings, handler, secrets=_field_secrets(fields))

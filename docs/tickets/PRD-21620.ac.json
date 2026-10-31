@@ -1,0 +1,113 @@
+[
+  {
+    "id": "TC-IGT-001",
+    "ac": "AC1",
+    "text": "Given a valid name and no other parameters, When itglue_create_flexible_asset_type is called, Then it sends POST /flexible_asset_types with only attributes.name set and returns the created type's id and name.",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_name_only"
+    ],
+    "result": "pass",
+    "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_type_name_only -> 1 passed. Asserts POST /flexible_asset_types sent with body {\"data\":{\"type\":\"flexible_asset_types\",\"attributes\":{\"name\":\"BitLocker (Rewst)\"}}} (no other attributes key present) and the tool returns {id, name} from the mocked response."
+  },
+  {
+    "id": "TC-IGT-002",
+    "ac": "AC2",
+    "text": "Given name, enabled, description and icon are all passed, When itglue_create_flexible_asset_type is called, Then all four are forwarded as data.attributes; given description/icon are omitted on a separate call, Then they do not appear in the sent body at all.",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_forwards_all_attributes",
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_omits_unset_optional_attributes"
+    ],
+    "result": "pass",
+    "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_type_forwards_all_attributes tests/test_flexible_assets.py::test_create_flexible_asset_type_omits_unset_optional_attributes -> 2 passed. First test asserts all four (name, enabled, description, icon) are forwarded as data.attributes verbatim; second asserts that when description/icon are omitted, neither key appears in the sent body at all (not sent as null)."
+  },
+  {
+    "id": "TC-IGT-003",
+    "ac": "AC3",
+    "text": "Given a fields list with one entry (name, kind, order, show_in_list), When itglue_create_flexible_asset_type is called, Then the upstream request carries data.relationships.flexible-asset-fields.data with exactly one item whose type and attribute keys match the design's casing decision (type flexible_asset_fields, kebab-case attributes).",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_sends_fields_relationship"
+    ],
+    "notes": "Casing is a design assumption (no live account to verify against, see Open questions); this test locks the assumption so a future correction is a deliberate, reviewed change, not a silent drift.",
+    "result": "pass",
+    "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_type_sends_fields_relationship -> 1 passed. Asserts the sent body's data.relationships.flexible-asset-fields.data has exactly one item: {\"type\":\"flexible_asset_fields\",\"attributes\":{\"name\":\"BitLocker Keys\",\"kind\":\"Textbox\",\"order\":0,\"show-in-list\":true}} (kebab-case attribute, underscored resource type, per the design's casing decision); also asserts the response's bare field id ref is surfaced as out['fields'] == [{\"id\": \"456\"}]."
+  },
+  {
+    "id": "TC-IGT-004",
+    "ac": "AC4",
+    "text": "Given fields is omitted, and separately given fields=[], When itglue_create_flexible_asset_type is called, Then the upstream request body has no relationships key at all.",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_without_fields_omits_relationships",
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_with_empty_fields_list_omits_relationships"
+    ],
+    "result": "pass",
+    "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_type_without_fields_omits_relationships tests/test_flexible_assets.py::test_create_flexible_asset_type_with_empty_fields_list_omits_relationships -> 2 passed. Both assert 'relationships' is absent from the sent body's data dict entirely (fields omitted, and separately fields=[])."
+  },
+  {
+    "id": "TC-IGT-005",
+    "ac": "AC5",
+    "text": "Given a fields entry missing kind (and, separately, missing name), When itglue_create_flexible_asset_type is called, Then it returns {\"error\": {\"code\": \"invalid_argument\", ...}} and no HTTP request is sent.",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_rejects_field_missing_kind",
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_rejects_field_missing_name"
+    ],
+    "result": "pass",
+    "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_type_rejects_field_missing_kind tests/test_flexible_assets.py::test_create_flexible_asset_type_rejects_field_missing_name -> 2 passed, no respx route mocked in either test (so an unmocked real HTTP call would have errored differently) -> confirms no HTTP request is sent; both return {\"error\":{\"code\":\"invalid_argument\",...}} with 'fields[0]' named in the message."
+  },
+  {
+    "id": "TC-IGT-006",
+    "ac": "AC6",
+    "text": "Given the X-ITGlue-API-Key header is missing, When itglue_create_flexible_asset_type is called, Then it returns {\"error\": {\"code\": \"not_configured\", ...}} rather than raising.",
+    "type": "auto",
+    "tests": [
+      "tests/test_handlers.py::test_missing_credentials_envelope"
+    ],
+    "notes": "Covered generically via the shared run() path (asserted today against get_organization); the new tool goes through the same run() helper unmodified, so no per-tool duplicate is required unless the dev leg wants an explicit assertion.",
+    "result": "pass",
+    "evidence": "uv run pytest -q tests/test_handlers.py::test_missing_credentials_envelope -> 1 passed (generic, exercises the shared run()/ITGlueClient path itglue_create_flexible_asset_type uses unmodified). Confirmed directly on the new tool by the live smoke test below: curl POST /mcp with the X-ITGlue-API-Key header omitted -> HTTP 401 before any tool handler runs, same gate for every tool."
+  },
+  {
+    "id": "TC-IGT-007",
+    "ac": "AC7",
+    "text": "Given IT Glue returns 409 for a duplicate type name, When itglue_create_flexible_asset_type is called, Then it returns {\"error\": {\"code\": \"invalid_argument\", ...}}; given a field's default_value is a secret-looking string and the request errors, Then that value does not appear anywhere in the returned error message.",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_duplicate_name_maps_to_invalid_argument",
+      "tests/test_flexible_assets.py::test_create_flexible_asset_type_error_does_not_leak_default_value"
+    ],
+    "result": "pass",
+    "evidence": "uv run pytest -q tests/test_flexible_assets.py::test_create_flexible_asset_type_duplicate_name_maps_to_invalid_argument tests/test_flexible_assets.py::test_create_flexible_asset_type_error_does_not_leak_default_value -> 2 passed. First asserts IT Glue's 409 response maps to {\"error\":{\"code\":\"invalid_argument\"}}; second asserts a field's default_value ('sk-live-looks-like-a-credential') does not appear anywhere in the returned error JSON or in caplog output after an upstream error."
+  },
+  {
+    "id": "TC-IGT-008",
+    "ac": "AC8",
+    "text": "Given tools/list is queried, When itglue_create_flexible_asset_type is registered, Then it is present with readOnlyHint false, destructiveHint false, idempotentHint false, no agent_id parameter, is listed in README's Tools table, and no existing tool loses a name or parameter.",
+    "type": "auto",
+    "tests": [
+      "tests/test_tools.py::test_tool_names_match_baseline",
+      "tests/test_tools.py::test_parameters_are_backward_compatible",
+      "tests/test_tools.py::test_annotations",
+      "tests/test_tools.py::test_no_agent_id_parameter"
+    ],
+    "notes": "Requires adding an itglue_create_flexible_asset_type entry to tests/fixtures/tools_baseline.json, and one new readOnlyHint-false assertion in test_annotations, in the same change (done).",
+    "result": "pass",
+    "evidence": "uv run pytest -q tests/test_tools.py::test_tool_names_match_baseline tests/test_tools.py::test_parameters_are_backward_compatible tests/test_tools.py::test_annotations tests/test_tools.py::test_no_agent_id_parameter -> 4 passed. test_annotations extended with a direct assertion that itglue_create_flexible_asset_type has readOnlyHint=false, destructiveHint=false, idempotentHint=false; confirmed live via the smoke test below that tools/list returns 38 tools (was 37) including itglue_create_flexible_asset_type, listed in README.md's Tools table ('Flexible assets' row), with every previously-registered tool still present with its previous parameters (test_parameters_are_backward_compatible passing is the direct check)."
+  },
+  {
+    "id": "TC-IGT-009",
+    "ac": "AC2",
+    "text": "api.attributes() unit coverage: given relationships=None (default), the built document is byte-for-byte identical to today's output; given a relationships dict, the built document nests it under data.relationships as {key: {\"data\": items}}.",
+    "type": "auto",
+    "tests": [
+      "tests/test_api.py::test_attributes_without_relationships_unchanged",
+      "tests/test_api.py::test_attributes_with_relationships_nests_data"
+    ],
+    "notes": "Direct test of the one new, reusable piece of machinery (api.attributes()'s relationships parameter), not only indirect coverage through the tool test. Test file tests/test_api.py may not exist yet in the repo; dev leg creates it or adds to the closest existing api-level test module if one exists under a different name.",
+    "result": "pass",
+    "evidence": "uv run pytest -q tests/test_api.py::test_attributes_without_relationships_unchanged tests/test_api.py::test_attributes_with_relationships_nests_data -> 2 passed (plus 2 more direct cases added for resource_id and an empty relationships dict, also passing). First confirms api.attributes() with relationships=None (the default) builds byte-for-byte the same document as before this change; second confirms a relationships dict nests correctly under data.relationships as {key: {\"data\": items}}. New file tests/test_api.py created, as the design anticipated it might not exist yet."
+  }
+]

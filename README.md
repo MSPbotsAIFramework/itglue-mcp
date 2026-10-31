@@ -104,7 +104,7 @@ Note: IT Glue revokes API keys that have not been used for 90 days.
 | Documents | `search_documents`, `get_document`, `list_document_folders`, `create_document`, `update_document`, `delete_document`, `publish_document`, `archive_document`, `unarchive_document` |
 | Document sections | `list_document_sections`, `create_document_section`, `update_document_section`, `delete_document_section` |
 | Attachments | `create_attachment`, `list_attachments` |
-| Flexible assets | `list_flexible_asset_types`, `search_flexible_assets`, `get_flexible_asset`, `create_flexible_asset`, `update_flexible_asset` |
+| Flexible assets | `list_flexible_asset_types`, `search_flexible_assets`, `get_flexible_asset`, `create_flexible_asset`, `itglue_create_flexible_asset_type`, `update_flexible_asset` |
 | Activity | `search_user_metrics` |
 | Users | `itglue_list_account_users` |
 | Diagnostics | `itglue_health_check` |
@@ -131,12 +131,18 @@ Behaviour notes:
   Only the fields passed are sent to IT Glue; nothing else is changed or cleared.
 - `password` parameters are marked secret in the tool schema (`format: password`, `writeOnly`); the
   server never logs them and masks them in error messages.
+- `create_flexible_asset` also accepts optional `archived` and `restricted` flags, sent to IT Glue
+  only when passed (same "only send what was set" behaviour `update_flexible_asset` already has for
+  `archived`).
 - IT Glue has no server-side name filter for documents or folders and no username filter for
   passwords; those filters are applied to the returned page.
 - `itglue_list_account_users`'s `filter[name]` is an exact match on IT Glue's side, unlike the
   fuzzy-feeling name filters on other search tools in this connector.
 - Section edits are only visible after `publish_document`.
 - Transient failures (429, 5xx, timeouts) are retried with backoff, honouring `Retry-After`.
+- `itglue_create_flexible_asset_type`'s `fields[*].kind` is not validated locally; IT Glue rejects
+  an invalid value with `invalid_argument`. A field's `default_value` is masked from error
+  messages, same as a trait value.
 
 ## Run locally
 
