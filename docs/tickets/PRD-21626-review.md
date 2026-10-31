@@ -91,4 +91,31 @@ Verdict: changes requested
   to `~/.claude/skills/vendor-mcp-development/reference/readme-connector-section.md` and untouched
   by this diff (only the Attachments row in the Tools table, outside that section, changed).
 
-### Fixes            ← appended by the dev leg on rework
+### Fixes
+
+1. [must-fix, fixed] `tests/test_tools.py:36-42` — ran `uv run ruff format tests/test_tools.py`,
+   which wrapped the `destructive` tuple one item per line exactly as the review's `--diff` output
+   showed. No other change to the file or its assertions.
+   Re-verified `uv run ruff format --check .`: 4 files flagged
+   (`docs/tickets/PRD-21624.md`, `src/itglue_mcp/_json.py`, `tests/test_handlers.py`,
+   `tests/test_paging_offset.py`) — the same 4 pre-existing files as the base (`ae5c844`), no new
+   ones; `tests/test_tools.py` no longer appears.
+   `uv run ruff check .`: 3 pre-existing errors, 0 new (unchanged from the review's own
+   verification).
+   `uv run pytest -q`: 140 passed, 0 failed — same as the review's independent run, no regressions.
+   Local server smoke test (`uv run python -m itglue_mcp` on 0.0.0.0:8080): `GET /health` → 200;
+   `initialize` with no `X-ITGlue-API-Key` → 401; with a placeholder key, `initialize` → 200,
+   `tools/list` → 200 with 40 tools, `delete_attachment` present.
+   Chinese-text scan: no hits outside the pre-existing `docs/tickets/PRD-2162*.md` files.
+
+2. [suggestion, not addressed] `docs/changes/` entry for `delete_attachment` — out of scope for
+   this round; the review marked it a suggestion, not a must-fix, and this round only touches the
+   formatting of `tests/test_tools.py`. Left for a future pass or explicit instruction.
+
+3. [suggestion, not addressed] `docs/tickets/PRD-21626.md` Self-test's `ruff check` file
+   attribution — same as above, the main ticket doc is frozen and not reopened for a suggestion;
+   the correction is recorded here in the review doc instead so a future reader has the accurate
+   file list (`tests/test_handlers.py:5` `I001`, `tests/test_handlers.py:221` `E501`,
+   `tests/test_passwords.py:5` `I001`).
+
+Fixed on `dev/PRD-21626` — see `[DEV · PRD-21626] Review fixes round 1` stub for the commit sha.
