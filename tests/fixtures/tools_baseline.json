@@ -59,7 +59,9 @@
    "flexible_asset_type_id",
    "name",
    "organization_id",
-   "traits"
+   "traits",
+   "archived",
+   "restricted"
   ],
   "required": [
    "flexible_asset_type_id",
@@ -146,6 +148,14 @@
    "id"
   ]
  },
+ "get_flexible_asset_type": {
+  "params": [
+   "id"
+  ],
+  "required": [
+   "id"
+  ]
+ },
  "get_location": {
   "params": [
    "id"
@@ -169,6 +179,18 @@
   ],
   "required": [
    "id"
+  ]
+ },
+ "itglue_create_flexible_asset_type": {
+  "params": [
+   "description",
+   "enabled",
+   "fields",
+   "icon",
+   "name"
+  ],
+  "required": [
+   "name"
   ]
  },
  "itglue_health_check": {

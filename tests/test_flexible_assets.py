@@ -76,6 +76,43 @@ async def test_create_flexible_asset_happy_path(call):
 
 
 @respx.mock
+async def test_create_flexible_asset_sets_archived_and_restricted(call):
+    route = respx.post(f"{BASE}/flexible_assets").mock(
+        return_value=httpx.Response(201, json={"data": asset(1002, archived=True, restricted=True)})
+    )
+    out = await call(
+        "create_flexible_asset",
+        organization_id=3,
+        flexible_asset_type_id=456,
+        traits={"domain-name": "corp.example.com"},
+        archived=True,
+        restricted=True,
+    )
+    body = json.loads(route.calls.last.request.content)
+    assert body["data"]["attributes"]["archived"] is True
+    assert body["data"]["attributes"]["restricted"] is True
+    assert out["archived"] is True
+    assert out["restricted"] is True
+
+
+@respx.mock
+async def test_create_flexible_asset_forwards_html_trait_value_unmodified(call):
+    html_value = "<table><tr><td>key</td><td>value</td></tr></table>"
+    route = respx.post(f"{BASE}/flexible_assets").mock(
+        return_value=httpx.Response(201, json={"data": asset(1003, traits={"rewst-org-variables": html_value})})
+    )
+    out = await call(
+        "create_flexible_asset",
+        organization_id=3,
+        flexible_asset_type_id=456,
+        traits={"rewst-org-variables": html_value},
+    )
+    body = json.loads(route.calls.last.request.content)
+    assert body["data"]["attributes"]["traits"] == {"rewst-org-variables": html_value}
+    assert out["traits"] == {"rewst-org-variables": html_value}
+
+
+@respx.mock
 async def test_create_flexible_asset_error_does_not_leak_trait_values(call, caplog):
     respx.post(f"{BASE}/flexible_assets").mock(side_effect=RuntimeError(f"boom {SECRET_LOOKING_TRAIT}"))
     with caplog.at_level(logging.DEBUG):
@@ -84,6 +121,8 @@ async def test_create_flexible_asset_error_does_not_leak_trait_values(call, capl
             organization_id=3,
             flexible_asset_type_id=456,
             traits={"api-key": SECRET_LOOKING_TRAIT},
+            archived=True,
+            restricted=True,
         )
     assert out["error"]["code"] == "upstream_error"
     assert SECRET_LOOKING_TRAIT not in json.dumps(out)
@@ -125,3 +164,197 @@ async def test_update_flexible_asset_not_found_returns_envelope(call):
     )
     out = await call("update_flexible_asset", id="999", name="x")
     assert out["error"]["code"] == "not_found"
+
+
+@respx.mock
+async def test_get_flexible_asset_type_returns_fields(call):
+    # PRD-21624 AC1: fetching an existing type returns its id, name and field definitions.
+    included = [
+        {
+            "id": "1",
+            "type": "flexible_asset_fields",
+            "attributes": {"name": "Domain Name", "kind": "Text", "required": True, "order": 1},
+        },
+        {
+            "id": "2",
+            "type": "flexible_asset_fields",
+            "attributes": {"name": "Functional Level", "kind": "Text", "required": False, "order": 2},
+        },
+    ]
+    respx.get(f"{BASE}/flexible_asset_types/456").mock(
+        return_value=httpx.Response(200, json={"data": flexible_asset_type(456), "included": included})
+    )
+    out = await call("get_flexible_asset_type", id="456")
+    assert out["id"] == "456"
+    assert out["name"] == "BitLocker (Rewst)"
+    assert out["fields"] == [
+        {"id": "1", "name": "Domain Name", "kind": "Text", "required": True, "order": 1},
+        {"id": "2", "name": "Functional Level", "kind": "Text", "required": False, "order": 2},
+    ]
+
+
+@respx.mock
+async def test_get_flexible_asset_type_not_found_returns_envelope(call):
+    # PRD-21624 AC2: an unknown (or cross-account) type ID returns the standard error envelope.
+    respx.get(f"{BASE}/flexible_asset_types/999").mock(
+        return_value=httpx.Response(404, json={"errors": [{"title": "not found"}]})
+    )
+    out = await call("get_flexible_asset_type", id="999")
+    assert out["error"]["code"] == "not_found"
+
+
+@respx.mock
+async def test_get_flexible_asset_type_with_no_fields_returns_empty_list(call):
+    # PRD-21624 AC3: IT Glue omits `included` entirely when a type has no custom fields configured;
+    # the tool must still return `fields: []`, not a missing key and not an error.
+    respx.get(f"{BASE}/flexible_asset_types/456").mock(
+        return_value=httpx.Response(200, json={"data": flexible_asset_type(456)})
+    )
+    out = await call("get_flexible_asset_type", id="456")
+    assert out["fields"] == []
+
+
+def flexible_asset_type(id_, relationships=None, **attrs):
+    base = {"name": "BitLocker (Rewst)", "enabled": True, "description": None, "icon": None}
+    base.update(attrs)
+    data = {"id": str(id_), "type": "flexible_asset_types", "attributes": base}
+    if relationships is not None:
+        data["relationships"] = relationships
+    return data
+
+
+@respx.mock
+async def test_create_flexible_asset_type_name_only(call):
+    route = respx.post(f"{BASE}/flexible_asset_types").mock(
+        return_value=httpx.Response(201, json={"data": flexible_asset_type(1, name="BitLocker (Rewst)")})
+    )
+    out = await call("itglue_create_flexible_asset_type", name="BitLocker (Rewst)")
+    body = json.loads(route.calls.last.request.content)
+    assert body == {"data": {"type": "flexible_asset_types", "attributes": {"name": "BitLocker (Rewst)"}}}
+    assert out["id"] == "1"
+    assert out["name"] == "BitLocker (Rewst)"
+
+
+@respx.mock
+async def test_create_flexible_asset_type_forwards_all_attributes(call):
+    route = respx.post(f"{BASE}/flexible_asset_types").mock(
+        return_value=httpx.Response(201, json={"data": flexible_asset_type(2)})
+    )
+    await call(
+        "itglue_create_flexible_asset_type",
+        name="BitLocker (Rewst)",
+        enabled=True,
+        description="Store BitLocker keys here",
+        icon="lock",
+    )
+    body = json.loads(route.calls.last.request.content)
+    assert body == {
+        "data": {
+            "type": "flexible_asset_types",
+            "attributes": {
+                "name": "BitLocker (Rewst)",
+                "enabled": True,
+                "description": "Store BitLocker keys here",
+                "icon": "lock",
+            },
+        }
+    }
+
+
+@respx.mock
+async def test_create_flexible_asset_type_omits_unset_optional_attributes(call):
+    route = respx.post(f"{BASE}/flexible_asset_types").mock(
+        return_value=httpx.Response(201, json={"data": flexible_asset_type(3)})
+    )
+    await call("itglue_create_flexible_asset_type", name="BitLocker (Rewst)", enabled=True)
+    body = json.loads(route.calls.last.request.content)
+    assert body["data"]["attributes"] == {"name": "BitLocker (Rewst)", "enabled": True}
+    assert "description" not in body["data"]["attributes"]
+    assert "icon" not in body["data"]["attributes"]
+
+
+@respx.mock
+async def test_create_flexible_asset_type_sends_fields_relationship(call):
+    route = respx.post(f"{BASE}/flexible_asset_types").mock(
+        return_value=httpx.Response(
+            201,
+            json={
+                "data": flexible_asset_type(
+                    4,
+                    relationships={"flexible-asset-fields": {"data": [{"id": "456", "type": "flexible_asset_fields"}]}},
+                )
+            },
+        )
+    )
+    out = await call(
+        "itglue_create_flexible_asset_type",
+        name="BitLocker (Rewst)",
+        fields=[{"name": "BitLocker Keys", "kind": "Textbox", "order": 0, "show_in_list": True}],
+    )
+    body = json.loads(route.calls.last.request.content)
+    assert body["data"]["relationships"] == {
+        "flexible-asset-fields": {
+            "data": [
+                {
+                    "type": "flexible_asset_fields",
+                    "attributes": {"name": "BitLocker Keys", "kind": "Textbox", "order": 0, "show-in-list": True},
+                }
+            ]
+        }
+    }
+    assert out["fields"] == [{"id": "456"}]
+
+
+@respx.mock
+async def test_create_flexible_asset_type_without_fields_omits_relationships(call):
+    route = respx.post(f"{BASE}/flexible_asset_types").mock(
+        return_value=httpx.Response(201, json={"data": flexible_asset_type(5)})
+    )
+    await call("itglue_create_flexible_asset_type", name="BitLocker (Rewst)")
+    body = json.loads(route.calls.last.request.content)
+    assert "relationships" not in body["data"]
+
+
+@respx.mock
+async def test_create_flexible_asset_type_with_empty_fields_list_omits_relationships(call):
+    route = respx.post(f"{BASE}/flexible_asset_types").mock(
+        return_value=httpx.Response(201, json={"data": flexible_asset_type(6)})
+    )
+    await call("itglue_create_flexible_asset_type", name="BitLocker (Rewst)", fields=[])
+    body = json.loads(route.calls.last.request.content)
+    assert "relationships" not in body["data"]
+
+
+async def test_create_flexible_asset_type_rejects_field_missing_kind(call):
+    out = await call("itglue_create_flexible_asset_type", name="BitLocker (Rewst)", fields=[{"name": "BitLocker Keys"}])
+    assert out["error"]["code"] == "invalid_argument"
+    assert "fields[0]" in out["error"]["message"]
+
+
+async def test_create_flexible_asset_type_rejects_field_missing_name(call):
+    out = await call("itglue_create_flexible_asset_type", name="BitLocker (Rewst)", fields=[{"kind": "Textbox"}])
+    assert out["error"]["code"] == "invalid_argument"
+    assert "fields[0]" in out["error"]["message"]
+
+
+@respx.mock
+async def test_create_flexible_asset_type_duplicate_name_maps_to_invalid_argument(call):
+    respx.post(f"{BASE}/flexible_asset_types").mock(
+        return_value=httpx.Response(409, json={"errors": [{"title": "Name has already been taken"}]})
+    )
+    out = await call("itglue_create_flexible_asset_type", name="BitLocker (Rewst)")
+    assert out["error"]["code"] == "invalid_argument"
+
+
+@respx.mock
+async def test_create_flexible_asset_type_error_does_not_leak_default_value(call, caplog):
+    respx.post(f"{BASE}/flexible_asset_types").mock(side_effect=RuntimeError(f"boom {SECRET_LOOKING_TRAIT}"))
+    with caplog.at_level(logging.DEBUG):
+        out = await call(
+            "itglue_create_flexible_asset_type",
+            name="BitLocker (Rewst)",
+            fields=[{"name": "Key", "kind": "Password", "default_value": SECRET_LOOKING_TRAIT}],
+        )
+    assert out["error"]["code"] == "upstream_error"
+    assert SECRET_LOOKING_TRAIT not in json.dumps(out)
+    assert SECRET_LOOKING_TRAIT not in caplog.text
