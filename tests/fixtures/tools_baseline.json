@@ -175,6 +175,17 @@
   "params": [],
   "required": []
  },
+ "itglue_list_account_users": {
+  "params": [
+   "email",
+   "name",
+   "page_number",
+   "page_size",
+   "role_name",
+   "sort"
+  ],
+  "required": []
+ },
  "list_attachments": {
   "params": [
    "resource_id",

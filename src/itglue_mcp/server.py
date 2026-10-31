@@ -21,6 +21,7 @@ from .tools import (
     organizations,
     passwords,
     user_metrics,
+    users,
 )
 
 INSTRUCTIONS = (
@@ -57,6 +58,7 @@ def create_mcp(settings: Settings) -> FastMCP:
         attachments,
         flexible_assets,
         user_metrics,
+        users,
     ):
         module.register(mcp, settings)
     return mcp

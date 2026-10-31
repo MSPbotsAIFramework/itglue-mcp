@@ -106,6 +106,7 @@ Note: IT Glue revokes API keys that have not been used for 90 days.
 | Attachments | `create_attachment`, `list_attachments` |
 | Flexible assets | `list_flexible_asset_types`, `search_flexible_assets`, `get_flexible_asset`, `create_flexible_asset`, `update_flexible_asset` |
 | Activity | `search_user_metrics` |
+| Users | `itglue_list_account_users` |
 | Diagnostics | `itglue_health_check` |
 
 Tool names and parameters match the previous IT Glue connector on the MSPbots Agent Platform, so
@@ -132,6 +133,8 @@ Behaviour notes:
   server never logs them and masks them in error messages.
 - IT Glue has no server-side name filter for documents or folders and no username filter for
   passwords; those filters are applied to the returned page.
+- `itglue_list_account_users`'s `filter[name]` is an exact match on IT Glue's side, unlike the
+  fuzzy-feeling name filters on other search tools in this connector.
 - Section edits are only visible after `publish_document`.
 - Transient failures (429, 5xx, timeouts) are retried with backoff, honouring `Retry-After`.
 
