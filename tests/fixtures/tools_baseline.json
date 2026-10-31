@@ -173,6 +173,18 @@
    "id"
   ]
  },
+ "itglue_create_flexible_asset_type": {
+  "params": [
+   "description",
+   "enabled",
+   "fields",
+   "icon",
+   "name"
+  ],
+  "required": [
+   "name"
+  ]
+ },
  "itglue_health_check": {
   "params": [],
   "required": []
