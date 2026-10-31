@@ -120,6 +120,27 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         return await run(settings, handler)
 
     @mcp.tool(
+        name="get_flexible_asset_type",
+        description=(
+            "Get one IT Glue flexible asset type by ID: its name and its field definitions (the "
+            "traits an asset of this type can have). Call this before create_flexible_asset or "
+            "update_flexible_asset to see which trait names and kinds the type expects."
+        ),
+        annotations=READ,
+        structured_output=False,
+    )
+    async def get_flexible_asset_type(
+        id: Annotated[str, Field(description="Flexible asset type ID.")],
+    ) -> str:
+        async def handler(client: api.ITGlueClient):
+            payload = await client.get(f"/flexible_asset_types/{seg(id)}", {"include": "flexible-asset-fields"})
+            result = api.item(payload)
+            result["fields"] = api.included(payload, "flexible_asset_fields")
+            return result
+
+        return await run(settings, handler)
+
+    @mcp.tool(
         name="create_flexible_asset",
         description=(
             "Create a flexible asset (custom record) of a given type in an IT Glue organization. "

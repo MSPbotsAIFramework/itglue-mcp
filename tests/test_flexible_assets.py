@@ -166,6 +166,54 @@ async def test_update_flexible_asset_not_found_returns_envelope(call):
     assert out["error"]["code"] == "not_found"
 
 
+@respx.mock
+async def test_get_flexible_asset_type_returns_fields(call):
+    # PRD-21624 AC1: fetching an existing type returns its id, name and field definitions.
+    included = [
+        {
+            "id": "1",
+            "type": "flexible_asset_fields",
+            "attributes": {"name": "Domain Name", "kind": "Text", "required": True, "order": 1},
+        },
+        {
+            "id": "2",
+            "type": "flexible_asset_fields",
+            "attributes": {"name": "Functional Level", "kind": "Text", "required": False, "order": 2},
+        },
+    ]
+    respx.get(f"{BASE}/flexible_asset_types/456").mock(
+        return_value=httpx.Response(200, json={"data": flexible_asset_type(456), "included": included})
+    )
+    out = await call("get_flexible_asset_type", id="456")
+    assert out["id"] == "456"
+    assert out["name"] == "BitLocker (Rewst)"
+    assert out["fields"] == [
+        {"id": "1", "name": "Domain Name", "kind": "Text", "required": True, "order": 1},
+        {"id": "2", "name": "Functional Level", "kind": "Text", "required": False, "order": 2},
+    ]
+
+
+@respx.mock
+async def test_get_flexible_asset_type_not_found_returns_envelope(call):
+    # PRD-21624 AC2: an unknown (or cross-account) type ID returns the standard error envelope.
+    respx.get(f"{BASE}/flexible_asset_types/999").mock(
+        return_value=httpx.Response(404, json={"errors": [{"title": "not found"}]})
+    )
+    out = await call("get_flexible_asset_type", id="999")
+    assert out["error"]["code"] == "not_found"
+
+
+@respx.mock
+async def test_get_flexible_asset_type_with_no_fields_returns_empty_list(call):
+    # PRD-21624 AC3: IT Glue omits `included` entirely when a type has no custom fields configured;
+    # the tool must still return `fields: []`, not a missing key and not an error.
+    respx.get(f"{BASE}/flexible_asset_types/456").mock(
+        return_value=httpx.Response(200, json={"data": flexible_asset_type(456)})
+    )
+    out = await call("get_flexible_asset_type", id="456")
+    assert out["fields"] == []
+
+
 def flexible_asset_type(id_, relationships=None, **attrs):
     base = {"name": "BitLocker (Rewst)", "enabled": True, "description": None, "icon": None}
     base.update(attrs)
