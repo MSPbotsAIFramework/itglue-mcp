@@ -1,0 +1,57 @@
+[
+  {
+    "id": "TC-ITGL-001",
+    "ac": "AC1",
+    "text": "Given a valid flexible asset id, When update_flexible_asset is called with only organization_id set, Then the PATCH payload carries only organization-id and the response reflects the updated organization",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_can_set_organization_id"]
+  },
+  {
+    "id": "TC-ITGL-002",
+    "ac": "AC2",
+    "text": "Given a valid flexible asset id, When update_flexible_asset is called with restricted=True and separately restricted=False, Then the PATCH payload carries restricted as true/false respectively (False is not dropped as if absent)",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_update_flexible_asset_can_set_restricted_true",
+      "tests/test_flexible_assets.py::test_update_flexible_asset_can_set_restricted_false"
+    ]
+  },
+  {
+    "id": "TC-ITGL-003",
+    "ac": "AC3",
+    "text": "Given a valid flexible asset id, When update_flexible_asset is called with a mix of old (traits) and new (organization_id) fields, Then the PATCH payload carries exactly those fields, nothing more",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_combines_old_and_new_fields"]
+  },
+  {
+    "id": "TC-ITGL-004",
+    "ac": "AC4",
+    "text": "Given a valid flexible asset id, When update_flexible_asset is called with only pre-existing fields (e.g. name), Then the PATCH payload is byte-for-byte unchanged from pre-PRD-21622 behavior (regression)",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_sends_only_changed_fields"]
+  },
+  {
+    "id": "TC-ITGL-005",
+    "ac": "AC5",
+    "text": "Given a valid flexible asset id, When update_flexible_asset is called with all five fields (name, traits, archived, organization_id, restricted) left None, Then the tool returns the invalid_argument error and makes no HTTP call (regression, now covering five fields instead of three)",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_rejects_empty_call"]
+  },
+  {
+    "id": "TC-ITGL-006",
+    "ac": "AC6",
+    "text": "Given an id that does not exist in IT Glue, When update_flexible_asset is called with any valid field (old or new), Then the tool returns the not_found error (regression)",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_not_found_returns_envelope"]
+  },
+  {
+    "id": "TC-ITGL-007",
+    "ac": "AC7",
+    "text": "Given the full test suite after this change, When tests/test_tools.py's baseline and backward-compatibility checks run, Then every other tool's schema is unchanged and no new required parameter or module-level state was introduced",
+    "type": "auto",
+    "tests": [
+      "tests/test_tools.py::test_tool_names_match_baseline",
+      "tests/test_tools.py::test_parameters_are_backward_compatible"
+    ]
+  }
+]
