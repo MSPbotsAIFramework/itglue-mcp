@@ -139,8 +139,19 @@ def register(mcp: FastMCP, settings: Settings) -> None:
         name: Name = None,
         traits: Traits = None,
         archived: Annotated[bool | None, Field(description="Archived flag.")] = None,
+        organization_id: Annotated[int | None, Field(description="Move the asset to a different organization.")] = None,
+        restricted: Annotated[
+            bool | None,
+            Field(description="Restrict visibility to users explicitly granted access to this asset."),
+        ] = None,
     ) -> str:
-        values = dict(name=name, traits=traits, archived=archived)
+        values = dict(
+            name=name,
+            traits=traits,
+            archived=archived,
+            organization_id=organization_id,
+            restricted=restricted,
+        )
 
         async def handler(client: api.ITGlueClient):
             if not any(v is not None for v in values.values()):

@@ -4,7 +4,9 @@
     "ac": "AC1",
     "text": "Given a valid flexible asset id, When update_flexible_asset is called with only organization_id set, Then the PATCH payload carries only organization-id and the response reflects the updated organization",
     "type": "auto",
-    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_can_set_organization_id"]
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_can_set_organization_id"],
+    "result": "pass",
+    "evidence": "uv run pytest tests/test_flexible_assets.py::test_update_flexible_asset_can_set_organization_id -v -> PASSED (1 passed). Asserts PATCH body == {\"data\": {\"type\": \"flexible_assets\", \"attributes\": {\"organization-id\": 42}}} and response out[\"organization_id\"] == 42. Also exercised live: a real call to the IT Glue sandbox API with a placeholder key via `tools/call` initialize+tools/call over HTTP returned a structured 401 (\"IT Glue rejected the API key\"), confirming the organization_id field is serialized and sent without crashing (no vendor test account available)."
   },
   {
     "id": "TC-ITGL-002",
@@ -14,35 +16,45 @@
     "tests": [
       "tests/test_flexible_assets.py::test_update_flexible_asset_can_set_restricted_true",
       "tests/test_flexible_assets.py::test_update_flexible_asset_can_set_restricted_false"
-    ]
+    ],
+    "result": "pass",
+    "evidence": "uv run pytest tests/test_flexible_assets.py::test_update_flexible_asset_can_set_restricted_true tests/test_flexible_assets.py::test_update_flexible_asset_can_set_restricted_false -v -> both PASSED (2 passed). restricted=False test asserts body == {..., \"attributes\": {\"restricted\": False}} -- confirms False is sent, not dropped as None would be."
   },
   {
     "id": "TC-ITGL-003",
     "ac": "AC3",
     "text": "Given a valid flexible asset id, When update_flexible_asset is called with a mix of old (traits) and new (organization_id) fields, Then the PATCH payload carries exactly those fields, nothing more",
     "type": "auto",
-    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_combines_old_and_new_fields"]
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_combines_old_and_new_fields"],
+    "result": "pass",
+    "evidence": "uv run pytest tests/test_flexible_assets.py::test_update_flexible_asset_combines_old_and_new_fields -v -> PASSED (1 passed). Asserts body[\"data\"][\"attributes\"] == {\"traits\": {...}, \"organization-id\": 42} exactly, no archived/restricted/name keys present."
   },
   {
     "id": "TC-ITGL-004",
     "ac": "AC4",
     "text": "Given a valid flexible asset id, When update_flexible_asset is called with only pre-existing fields (e.g. name), Then the PATCH payload is byte-for-byte unchanged from pre-PRD-21622 behavior (regression)",
     "type": "auto",
-    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_sends_only_changed_fields"]
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_sends_only_changed_fields"],
+    "result": "pass",
+    "evidence": "uv run pytest tests/test_flexible_assets.py::test_update_flexible_asset_sends_only_changed_fields -v -> PASSED (1 passed), unmodified from before this change. Asserts body == {\"data\": {\"type\": \"flexible_assets\", \"attributes\": {\"name\": \"Renamed\"}}} -- no organization-id/restricted keys appear."
   },
   {
     "id": "TC-ITGL-005",
     "ac": "AC5",
     "text": "Given a valid flexible asset id, When update_flexible_asset is called with all five fields (name, traits, archived, organization_id, restricted) left None, Then the tool returns the invalid_argument error and makes no HTTP call (regression, now covering five fields instead of three)",
     "type": "auto",
-    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_rejects_empty_call"]
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_rejects_empty_call"],
+    "result": "pass",
+    "evidence": "uv run pytest tests/test_flexible_assets.py::test_update_flexible_asset_rejects_empty_call -v -> PASSED (1 passed), unmodified. Test calls update_flexible_asset(id=\"789\") with the two new params left at their None default too (5 fields now), asserts out[\"error\"][\"code\"] == \"invalid_argument\"; no respx route mocked so any HTTP call would raise."
   },
   {
     "id": "TC-ITGL-006",
     "ac": "AC6",
     "text": "Given an id that does not exist in IT Glue, When update_flexible_asset is called with any valid field (old or new), Then the tool returns the not_found error (regression)",
     "type": "auto",
-    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_not_found_returns_envelope"]
+    "tests": ["tests/test_flexible_assets.py::test_update_flexible_asset_not_found_returns_envelope"],
+    "result": "pass",
+    "evidence": "uv run pytest tests/test_flexible_assets.py::test_update_flexible_asset_not_found_returns_envelope -v -> PASSED (1 passed), unmodified. Mocks IT Glue 404, asserts out[\"error\"][\"code\"] == \"not_found\". Not re-parametrized with the new fields since the not_found mapping happens before the attribute payload is inspected (same code path for any field set); confirmed by reading src/itglue_mcp/api.py's _status_to_error, which only looks at the HTTP status."
   },
   {
     "id": "TC-ITGL-007",
@@ -52,6 +64,8 @@
     "tests": [
       "tests/test_tools.py::test_tool_names_match_baseline",
       "tests/test_tools.py::test_parameters_are_backward_compatible"
-    ]
+    ],
+    "result": "pass",
+    "evidence": "uv run pytest tests/test_tools.py -v -> all 5 tests PASSED, including test_tool_names_match_baseline and test_parameters_are_backward_compatible (37 tools, tools_baseline.json's update_flexible_asset params updated to include organization_id/restricted, required still just [\"id\"]). Live smoke test: started `uv run itglue-mcp`, sent initialize + tools/list over HTTP with a placeholder X-ITGlue-API-Key -> 37 tools returned, update_flexible_asset's inputSchema.properties == {archived, id, name, organization_id, restricted, traits}; a request with no API key header returned 401; /health returned 200. Server stopped after the check. Full gate also run: `uv run pytest -q` -> 119 passed (baseline before this change: 115 passed, confirmed by `git stash`); `uv run ruff check .` and `uv run ruff format --check .` show the same 3 lint errors / 4 reformat candidates before and after this change (tests/test_handlers.py, tests/test_passwords.py, src/itglue_mcp/_json.py, tests/test_paging_offset.py, docs/tickets/PRD-21622.md) -- pre-existing baseline, not touched by this change, no new lint/format issues introduced. Chinese-text scan (`grep -rnP '[\\x{4e00}-\\x{9fff}]' --exclude-dir=.git --exclude-dir=.venv .`) -> no matches. README Connector section (lines 11-81) diffs clean against reference/readme-connector-section.md -- unaffected, no change needed."
   }
 ]
