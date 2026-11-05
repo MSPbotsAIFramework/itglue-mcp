@@ -11,7 +11,7 @@ from pydantic import Field
 
 from .. import api
 from ..config import Settings
-from ._common import CREATE, READ, ToolInputError, run, seg
+from ._common import CREATE, DESTRUCTIVE, READ, ToolInputError, run, seg
 
 ResourceType = Literal[
     "checklists",
@@ -80,5 +80,27 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             payload = await client.get(f"/{resource_type}/{seg(resource_id)}/relationships/attachments")
             items = [api.flatten(r) for r in (payload or {}).get("data") or []]
             return {"items": items, "count": len(items)}
+
+        return await run(settings, handler)
+
+    @mcp.tool(
+        name="delete_attachment",
+        description=(
+            "Remove a file attachment from an IT Glue record (detach it). This cannot be undone; "
+            "confirm with the user first."
+        ),
+        annotations=DESTRUCTIVE,
+        structured_output=False,
+    )
+    async def delete_attachment(
+        resource_type: Annotated[ResourceType, Field(description="Kind of record the attachment is on.")],
+        resource_id: Annotated[int, Field(description="ID of that record.")],
+        attachment_id: Annotated[int, Field(description="ID of the attachment relationship to remove.")],
+    ) -> str:
+        async def handler(client: api.ITGlueClient):
+            aid = seg(attachment_id)
+            body = {"data": [{"type": "attachments", "attributes": {"id": int(aid)}}]}
+            await client.delete(f"/{resource_type}/{seg(resource_id)}/relationships/attachments", body)
+            return {"id": aid, "deleted": True}
 
         return await run(settings, handler)

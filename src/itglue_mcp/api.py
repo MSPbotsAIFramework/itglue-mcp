@@ -180,6 +180,14 @@ def item(payload: dict[str, Any] | None, drop: set[str] | None = None) -> dict[s
     return flatten(data, drop)
 
 
+def included(payload: dict[str, Any] | None, type_: str | None = None) -> list[dict[str, Any]]:
+    """Flattened `included` sideload resources from a JSON:API response that used `?include=`."""
+    rows = (payload or {}).get("included") or []
+    if type_:
+        rows = [r for r in rows if r.get("type") == type_]
+    return [flatten(r) for r in rows]
+
+
 def page(
     payload: dict[str, Any] | None,
     page_number: int,
@@ -230,10 +238,24 @@ def keep_matching(result: dict[str, Any], match: Callable[[dict[str, Any]], bool
     return result
 
 
-def attributes(type_: str, values: dict[str, Any], resource_id: Any = None) -> dict[str, Any]:
-    """Build a JSON:API request document, dropping unset values and dasherizing keys."""
+def attributes(
+    type_: str,
+    values: dict[str, Any],
+    resource_id: Any = None,
+    relationships: dict[str, list[dict[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    """Build a JSON:API request document, dropping unset values and dasherizing keys.
+
+    ``relationships`` (optional) nests a compound-create document: each key is a relationship
+    name, each value a list of ``{"type": ..., "attributes": {...}}`` items already shaped by the
+    caller (this helper does not dasherize inside them, since a related resource's own attribute
+    keys are the caller's responsibility). Omitted (``None``, the default) or empty, no
+    ``relationships`` key is added at all -- today's output is unchanged byte-for-byte.
+    """
     attrs = {k.replace("_", "-"): v for k, v in values.items() if v is not None}
     data: dict[str, Any] = {"type": type_, "attributes": attrs}
     if resource_id is not None:
         data["id"] = str(resource_id)
+    if relationships:
+        data["relationships"] = {key: {"data": items} for key, items in relationships.items()}
     return {"data": data}
