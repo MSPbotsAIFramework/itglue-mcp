@@ -6,7 +6,9 @@
     "type": "auto",
     "tests": [
       "tests/test_handlers.py::test_list_contacts_returns_envelope_with_expected_fields"
-    ]
+    ],
+    "result": "pass",
+    "evidence": "tests/test_handlers.py::test_list_contacts_returns_envelope_with_expected_fields pass (uv run pytest -q, 146 passed on dev/PRD-21625@b662c80 synced with main@abf9dd7); live smoke (uv run itglue-mcp, port 18211): tools/list with placeholder X-ITGlue-API-Key returned itglue_list_contacts."
   },
   {
     "id": "TC-IGLC-002",
@@ -15,7 +17,9 @@
     "type": "auto",
     "tests": [
       "tests/test_handlers.py::test_list_contacts_forwards_organization_and_email_filters"
-    ]
+    ],
+    "result": "pass",
+    "evidence": "tests/test_handlers.py::test_list_contacts_forwards_organization_and_email_filters pass -- asserts filter[organization_id] and filter[email] on the mocked GET /contacts request."
   },
   {
     "id": "TC-IGLC-003",
@@ -24,7 +28,9 @@
     "type": "auto",
     "tests": [
       "tests/test_handlers.py::test_list_contacts_forwards_name_and_type_filters"
-    ]
+    ],
+    "result": "pass",
+    "evidence": "tests/test_handlers.py::test_list_contacts_forwards_name_and_type_filters pass -- asserts filter[name], filter[first_name], filter[last_name], filter[contact_type_id]."
   },
   {
     "id": "TC-IGLC-004",
@@ -33,7 +39,9 @@
     "type": "auto",
     "tests": [
       "tests/test_handlers.py::test_list_contacts_forwards_sort"
-    ]
+    ],
+    "result": "pass",
+    "evidence": "tests/test_handlers.py::test_list_contacts_forwards_sort pass -- asserts sort=-updated_at forwarded unchanged."
   },
   {
     "id": "TC-IGLC-005",
@@ -43,7 +51,9 @@
     "tests": [
       "tests/test_paging_offset.py::test_cut_pages_walked_by_next_offset_return_every_record_once"
     ],
-    "notes": "Covered by adding (\"itglue_list_contacts\", \"/contacts\", {}) to the shared LISTS table in tests/test_paging_offset.py; no new test code needed beyond the table entry."
+    "notes": "Covered by adding (\"itglue_list_contacts\", \"/contacts\", {}) to the shared LISTS table in tests/test_paging_offset.py; no new test code needed beyond the table entry.",
+    "result": "pass",
+    "evidence": "tests/test_paging_offset.py::test_cut_pages_walked_by_next_offset_return_every_record_once[None-itglue_list_contacts-/contacts-args9] and [200-itglue_list_contacts-/contacts-args9] pass -- (\"itglue_list_contacts\", \"/contacts\", {}) added to the shared LISTS table; both page_size parametrizations ran as part of the 146-pass suite."
   },
   {
     "id": "TC-IGLC-006",
@@ -53,7 +63,9 @@
     "tests": [
       "tests/test_handlers.py::test_missing_credentials_envelope"
     ],
-    "notes": "Inherited generic coverage: this shared test already exercises every tool (including itglue_list_contacts once registered) through the common run()/ITGlueClient path; no per-tool duplicate needed."
+    "notes": "Inherited generic coverage: this shared test already exercises every tool (including itglue_list_contacts once registered) through the common run()/ITGlueClient path; no per-tool duplicate needed.",
+    "result": "pass",
+    "evidence": "tests/test_handlers.py::test_missing_credentials_envelope pass -- generic test exercising the shared run()/ITGlueClient path that itglue_list_contacts also goes through (no per-tool code path to diverge)."
   },
   {
     "id": "TC-IGLC-007",
@@ -63,7 +75,9 @@
     "tests": [
       "tests/test_handlers.py::test_error_mapping"
     ],
-    "notes": "Inherited generic coverage via the shared run()/ITGlueClient.request() error-mapping path, same as every other tool; no per-tool duplicate needed."
+    "notes": "Inherited generic coverage via the shared run()/ITGlueClient.request() error-mapping path, same as every other tool; no per-tool duplicate needed.",
+    "result": "pass",
+    "evidence": "tests/test_handlers.py::test_error_mapping pass -- generic test exercising the shared ITGlueClient.request() retry/error-mapping path (429->retry, 403->unauthorized) that itglue_list_contacts also goes through."
   },
   {
     "id": "TC-IGLC-008",
@@ -78,6 +92,8 @@
       "tests/test_middleware.py::test_malformed_region_or_base_url_does_not_block_initialize_or_tools_list",
       "tests/test_middleware.py::test_tools_list_is_stateless"
     ],
-    "notes": "Covered by adding the itglue_list_contacts entry to tests/fixtures/tools_baseline.json and bumping the two hardcoded tools/list counts in tests/test_middleware.py from 37 to 38; no new test code needed beyond those two edits."
+    "notes": "Covered by adding the itglue_list_contacts entry to tests/fixtures/tools_baseline.json and bumping the two hardcoded tools/list counts in tests/test_middleware.py from 37 to 38; no new test code needed beyond those two edits.",
+    "result": "pass",
+    "evidence": "tests/test_tools.py::test_tool_names_match_baseline, test_parameters_are_backward_compatible, test_annotations (itglue_list_contacts added to the readOnlyHint assertion list), test_no_agent_id_parameter; tests/test_middleware.py's two tools/list count assertions bumped 40->41 -- all pass. Live smoke confirms: tools/list (with placeholder key) count=41, itglue_list_contacts present, readOnlyHint=true, no agent_id param. README.md Tools table includes the Contacts row."
   }
 ]
