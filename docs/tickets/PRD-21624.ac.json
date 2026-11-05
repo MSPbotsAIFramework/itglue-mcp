@@ -1,0 +1,49 @@
+[
+  {
+    "id": "TC1",
+    "ac": "AC1",
+    "text": "Given an existing flexible asset type ID with configured fields, when get_flexible_asset_type is called, then the response includes id, name, and a fields list with one entry per configured field (each with at least id, name and kind).",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_get_flexible_asset_type_returns_fields"
+    ],
+    "source": "design"
+  },
+  {
+    "id": "TC2",
+    "ac": "AC2",
+    "text": "Given a flexible asset type ID that does not exist, when get_flexible_asset_type is called, then the response is the not_found error envelope, not a raw HTTP error.",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_get_flexible_asset_type_not_found_returns_envelope"
+    ],
+    "source": "design"
+  },
+  {
+    "id": "TC3",
+    "ac": "AC3",
+    "text": "Given a flexible asset type with no custom fields configured, when get_flexible_asset_type is called, then the response's fields list is an empty array, not an error and not a missing key.",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_get_flexible_asset_type_with_no_fields_returns_empty_list"
+    ],
+    "source": "design"
+  },
+  {
+    "id": "TC4",
+    "ac": "AC1",
+    "text": "Given a real IT Glue tenant, when an agent fetches a type's fields with get_flexible_asset_type and then creates a flexible asset using the returned field names as trait keys, then the IT Glue UI shows the new asset with those trait values correctly attached.",
+    "type": "manual",
+    "steps": [
+      "Call get_flexible_asset_type with a real flexible_asset_type_id and record the returned fields list",
+      "Call create_flexible_asset for that type, using the returned field names as traits keys with sample values",
+      "Open the new asset in the IT Glue web UI",
+      "Compare the UI's displayed trait values against the request sent to create_flexible_asset"
+    ],
+    "expect": "The IT Glue UI shows the new flexible asset with every trait set to the value sent, under the field names get_flexible_asset_type returned.",
+    "result": "untested",
+    "evidence": "",
+    "notes": "Needs a real vendor account; no IT Glue test tenant is available to this pipeline. Not a blocker per references/mcp-track.md §3.",
+    "source": "design"
+  }
+]

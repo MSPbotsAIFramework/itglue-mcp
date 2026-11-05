@@ -59,7 +59,9 @@
    "flexible_asset_type_id",
    "name",
    "organization_id",
-   "traits"
+   "traits",
+   "archived",
+   "restricted"
   ],
   "required": [
    "flexible_asset_type_id",
@@ -100,6 +102,18 @@
    "name",
    "organization_id",
    "password"
+  ]
+ },
+ "delete_attachment": {
+  "params": [
+   "attachment_id",
+   "resource_id",
+   "resource_type"
+  ],
+  "required": [
+   "attachment_id",
+   "resource_id",
+   "resource_type"
   ]
  },
  "delete_document": {
@@ -146,6 +160,14 @@
    "id"
   ]
  },
+ "get_flexible_asset_type": {
+  "params": [
+   "id"
+  ],
+  "required": [
+   "id"
+  ]
+ },
  "get_location": {
   "params": [
    "id"
@@ -169,6 +191,18 @@
   ],
   "required": [
    "id"
+  ]
+ },
+ "itglue_create_flexible_asset_type": {
+  "params": [
+   "description",
+   "enabled",
+   "fields",
+   "icon",
+   "name"
+  ],
+  "required": [
+   "name"
   ]
  },
  "itglue_health_check": {

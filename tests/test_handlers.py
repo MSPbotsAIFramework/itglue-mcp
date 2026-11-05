@@ -311,6 +311,70 @@ async def test_create_attachment_strips_data_prefix(call):
 
 
 @respx.mock
+async def test_delete_attachment_sends_expected_request_and_envelope(call):
+    route = respx.delete(f"{BASE}/documents/40/relationships/attachments").mock(return_value=httpx.Response(204))
+    out = await call("delete_attachment", resource_type="documents", resource_id=40, attachment_id=7)
+    assert json.loads(route.calls.last.request.content) == {
+        "data": [{"type": "attachments", "attributes": {"id": 7}}]
+    }
+    assert out == {"id": "7", "deleted": True}
+
+
+@respx.mock
+async def test_delete_attachment_on_flexible_asset(call):
+    # PRD-21626 AC2: the concrete capability EMD Networking Services' Rewst sub-flow needs.
+    route = respx.delete(f"{BASE}/flexible_assets/50/relationships/attachments").mock(
+        return_value=httpx.Response(204)
+    )
+    out = await call("delete_attachment", resource_type="flexible_assets", resource_id=50, attachment_id=9)
+    assert json.loads(route.calls.last.request.content) == {
+        "data": [{"type": "attachments", "attributes": {"id": 9}}]
+    }
+    assert out == {"id": "9", "deleted": True}
+
+
+@respx.mock
+async def test_delete_attachment_not_found(call):
+    respx.delete(f"{BASE}/documents/40/relationships/attachments").mock(
+        return_value=httpx.Response(404, json={"errors": [{"title": "not found"}]})
+    )
+    out = await call("delete_attachment", resource_type="documents", resource_id=40, attachment_id=999)
+    assert out["error"]["code"] == "not_found"
+
+
+@respx.mock
+async def test_delete_attachment_missing_credentials(call):
+    from itglue_mcp import credentials
+
+    token = credentials._current.set(None)
+    try:
+        out = await call("delete_attachment", resource_type="documents", resource_id=40, attachment_id=7)
+    finally:
+        credentials._current.reset(token)
+    assert out["error"]["code"] == "not_configured"
+
+
+@respx.mock
+async def test_delete_attachment_retries_rate_limit_then_succeeds(call):
+    route = respx.delete(f"{BASE}/documents/40/relationships/attachments").mock(
+        side_effect=[httpx.Response(429, headers={"Retry-After": "0"}), httpx.Response(204)]
+    )
+    out = await call("delete_attachment", resource_type="documents", resource_id=40, attachment_id=7)
+    assert out == {"id": "7", "deleted": True}
+    assert route.call_count == 2
+
+
+@respx.mock
+async def test_delete_attachment_unauthorized(call):
+    respx.delete(f"{BASE}/documents/40/relationships/attachments").mock(
+        return_value=httpx.Response(403, json={"errors": [{"title": "forbidden"}]})
+    )
+    out = await call("delete_attachment", resource_type="documents", resource_id=40, attachment_id=7)
+    assert out["error"]["code"] == "unauthorized"
+    assert out["error"]["retryable"] is False
+
+
+@respx.mock
 @pytest.mark.parametrize(
     ("start", "end", "expected"),
     [("2026-10-01", "2026-10-07", "2026-10-01,2026-10-07"), ("2026-10-01", None, "2026-10-01,*")],
