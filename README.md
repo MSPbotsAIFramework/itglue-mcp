@@ -105,7 +105,7 @@ Note: IT Glue revokes API keys that have not been used for 90 days.
 | Documents | `search_documents`, `get_document`, `list_document_folders`, `create_document`, `update_document`, `delete_document`, `publish_document`, `archive_document`, `unarchive_document` |
 | Document sections | `list_document_sections`, `create_document_section`, `update_document_section`, `delete_document_section` |
 | Attachments | `create_attachment`, `list_attachments`, `delete_attachment` |
-| Flexible assets | `list_flexible_asset_types`, `search_flexible_assets`, `get_flexible_asset`, `get_flexible_asset_type`, `create_flexible_asset`, `itglue_create_flexible_asset_type`, `update_flexible_asset` |
+| Flexible assets | `list_flexible_asset_types`, `search_flexible_assets`, `get_flexible_asset`, `get_flexible_asset_type`, `create_flexible_asset`, `itglue_create_flexible_asset_type`, `itglue_create_flexible_asset_field`, `update_flexible_asset` |
 | Activity | `search_user_metrics` |
 | Users | `itglue_list_account_users` |
 | Diagnostics | `itglue_health_check` |
@@ -146,6 +146,9 @@ Behaviour notes:
 - `itglue_create_flexible_asset_type`'s `fields[*].kind` is not validated locally; IT Glue rejects
   an invalid value with `invalid_argument`. A field's `default_value` is masked from error
   messages, same as a trait value.
+- `itglue_create_flexible_asset_field` adds a field to an existing flexible asset *type* (its
+  schema), not to an asset record; set that field's value on an asset with `update_flexible_asset`'s
+  `traits`. `kind` / `tag_type` are not validated locally, and `default_value` is masked the same way.
 
 ## Run locally
 

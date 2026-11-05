@@ -416,3 +416,115 @@ async def test_create_flexible_asset_type_error_does_not_leak_default_value(call
     assert out["error"]["code"] == "upstream_error"
     assert SECRET_LOOKING_TRAIT not in json.dumps(out)
     assert SECRET_LOOKING_TRAIT not in caplog.text
+
+
+def flexible_asset_field(id_, **attrs):
+    base = {"name": "Full Access Record", "kind": "Tag", "order": 860, "tag-type": "Contacts", "show-in-list": False}
+    base.update(attrs)
+    return {"id": str(id_), "type": "flexible_asset_fields", "attributes": base}
+
+
+FIELDS_PATH = f"{BASE}/flexible_asset_types/456/relationships/flexible_asset_fields"
+
+
+@respx.mock
+async def test_create_flexible_asset_field_happy_path(call):
+    # PRD-21627 AC1: the Rewst flow reads the new field's data.id.
+    route = respx.post(FIELDS_PATH).mock(return_value=httpx.Response(201, json={"data": flexible_asset_field(9001)}))
+    out = await call(
+        "itglue_create_flexible_asset_field",
+        flexible_asset_type_id=456,
+        name="Full Access Record",
+        kind="Tag",
+        order=860,
+        required=False,
+        show_in_list=False,
+        use_for_title=False,
+        tag_type="Contacts",
+        hint="Who has full access",
+        default_value="none",
+    )
+    body = json.loads(route.calls.last.request.content)
+    assert body == {
+        "data": {
+            "type": "flexible_asset_fields",
+            "attributes": {
+                "name": "Full Access Record",
+                "kind": "Tag",
+                "order": 860,
+                "required": False,
+                "show-in-list": False,
+                "use-for-title": False,
+                "tag-type": "Contacts",
+                "hint": "Who has full access",
+                "default-value": "none",
+            },
+        }
+    }
+    assert out["id"] == "9001"
+    assert out["name"] == "Full Access Record"
+
+
+@respx.mock
+async def test_create_flexible_asset_field_omits_unset_optional_fields(call):
+    route = respx.post(FIELDS_PATH).mock(return_value=httpx.Response(201, json={"data": flexible_asset_field(9002)}))
+    await call("itglue_create_flexible_asset_field", flexible_asset_type_id=456, name="Notes", kind="Textbox")
+    body = json.loads(route.calls.last.request.content)
+    assert body["data"]["attributes"] == {"name": "Notes", "kind": "Textbox"}
+
+
+@respx.mock
+async def test_create_flexible_asset_field_forwards_kind_and_tag_type(call):
+    # Not validated locally: IT Glue is the source of truth for legal kinds and tag types.
+    route = respx.post(FIELDS_PATH).mock(return_value=httpx.Response(201, json={"data": flexible_asset_field(9003)}))
+    await call(
+        "itglue_create_flexible_asset_field",
+        flexible_asset_type_id=456,
+        name="Full Access Record",
+        kind="Tag",
+        tag_type="Contacts",
+    )
+    attrs = json.loads(route.calls.last.request.content)["data"]["attributes"]
+    assert attrs["kind"] == "Tag"
+    assert attrs["tag-type"] == "Contacts"
+
+
+async def test_create_flexible_asset_field_rejects_non_numeric_type_id(call):
+    with respx.mock(assert_all_called=False) as router:
+        route = router.post(url__regex=r".*").mock(return_value=httpx.Response(201))
+        out = await call("itglue_create_flexible_asset_field", flexible_asset_type_id="../users", name="X", kind="Text")
+    assert out["error"]["code"] == "invalid_argument"
+    assert not route.called
+
+
+@respx.mock
+async def test_create_flexible_asset_field_not_found_returns_envelope(call):
+    respx.post(f"{BASE}/flexible_asset_types/999/relationships/flexible_asset_fields").mock(
+        return_value=httpx.Response(404, json={"errors": [{"title": "not found"}]})
+    )
+    out = await call("itglue_create_flexible_asset_field", flexible_asset_type_id=999, name="X", kind="Text")
+    assert out["error"]["code"] == "not_found"
+
+
+@respx.mock
+async def test_create_flexible_asset_field_error_does_not_leak_default_value(call, caplog):
+    respx.post(FIELDS_PATH).mock(side_effect=RuntimeError(f"boom {SECRET_LOOKING_TRAIT}"))
+    with caplog.at_level(logging.DEBUG):
+        out = await call(
+            "itglue_create_flexible_asset_field",
+            flexible_asset_type_id=456,
+            name="Key",
+            kind="Password",
+            default_value=SECRET_LOOKING_TRAIT,
+        )
+    assert out["error"]["code"] == "upstream_error"
+    assert SECRET_LOOKING_TRAIT not in json.dumps(out)
+    assert SECRET_LOOKING_TRAIT not in caplog.text
+
+
+async def test_create_flexible_asset_field_annotations(mcp):
+    tool = {t.name: t for t in await mcp.list_tools()}["itglue_create_flexible_asset_field"]
+    assert tool.annotations.readOnlyHint is False
+    assert tool.annotations.destructiveHint is False
+    assert tool.annotations.idempotentHint is False
+    assert set(tool.inputSchema["required"]) == {"flexible_asset_type_id", "name", "kind"}

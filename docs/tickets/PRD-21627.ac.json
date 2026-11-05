@@ -1,0 +1,76 @@
+[
+  {
+    "id": "TC-IGF-001",
+    "ac": "AC1",
+    "text": "Given a valid flexible_asset_type_id, name and kind, When itglue_create_flexible_asset_field is called, Then the field is created and the tool returns an envelope whose id matches the one IT Glue returned.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_create_flexible_asset_field_happy_path"],
+    "result": "pass",
+    "evidence": "2026-11-05 dev01 self-test on dev/PRD-21627 @ c5f8a1d (main abf9dd7 merged); `uv run pytest -v tests/test_flexible_assets.py::test_create_flexible_asset_field_happy_path` PASSED (mocked IT Glue POST /flexible_asset_types/{id}/relationships/flexible_asset_fields returns 201, envelope id matches). Full suite: tdd.py final 147 passed, diff baseline(140)->final 0 regressions (~/.cache/mb-pipeline/tickets/PRD-21627/final.json)."
+  },
+  {
+    "id": "TC-IGF-002",
+    "ac": "AC2",
+    "text": "Given only flexible_asset_type_id, name and kind are passed, When itglue_create_flexible_asset_field is called, Then the upstream request body's attributes contain exactly name and kind -- no optional fields are sent unset.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_create_flexible_asset_field_omits_unset_optional_fields"],
+    "result": "pass",
+    "evidence": "2026-11-05 dev01 self-test on dev/PRD-21627 @ c5f8a1d (main abf9dd7 merged); `uv run pytest -v tests/test_flexible_assets.py::test_create_flexible_asset_field_omits_unset_optional_fields` PASSED (asserts upstream body attributes == {name, kind} only). Live tools/list on local server (port 18627) confirms all 7 optional params default null and only flexible_asset_type_id/name/kind are required (~/.cache/mb-pipeline/tickets/PRD-21627/smoke.txt TOOL line)."
+  },
+  {
+    "id": "TC-IGF-003",
+    "ac": "AC3",
+    "text": "Given kind=\"Tag\" and tag_type=\"Contacts\" (the gap register's own example), When itglue_create_flexible_asset_field is called, Then both values are forwarded unchanged to IT Glue with no local validation.",
+    "type": "auto",
+    "tests": ["tests/test_flexible_assets.py::test_create_flexible_asset_field_forwards_kind_and_tag_type"],
+    "result": "pass",
+    "evidence": "2026-11-05 dev01 self-test on dev/PRD-21627 @ c5f8a1d (main abf9dd7 merged); `uv run pytest -v tests/test_flexible_assets.py::test_create_flexible_asset_field_forwards_kind_and_tag_type` PASSED (kind=Tag, tag_type=Contacts forwarded unchanged). Live tools/list: kind and tag_type are plain strings with no enum (no local validation) (~/.cache/mb-pipeline/tickets/PRD-21627/smoke.txt)."
+  },
+  {
+    "id": "TC-IGF-004",
+    "ac": "AC4",
+    "text": "Given a non-numeric flexible_asset_type_id, When itglue_create_flexible_asset_field is called, Then it returns {\"error\": {\"code\": \"invalid_argument\"}} without calling IT Glue; given a numeric but non-existent type id, IT Glue's 404 is mapped to {\"error\": {\"code\": \"not_found\"}}.",
+    "type": "auto",
+    "tests": [
+      "tests/test_flexible_assets.py::test_create_flexible_asset_field_rejects_non_numeric_type_id",
+      "tests/test_flexible_assets.py::test_create_flexible_asset_field_not_found_returns_envelope"
+    ],
+    "result": "pass",
+    "evidence": "2026-11-05 dev01 self-test on dev/PRD-21627 @ c5f8a1d (main abf9dd7 merged); `uv run pytest -v` ...::test_create_flexible_asset_field_rejects_non_numeric_type_id PASSED and ...::test_create_flexible_asset_field_not_found_returns_envelope PASSED (404 -> not_found). Live: tools/call with flexible_asset_type_id=\"abc\" and placeholder key returned {\"error\":{\"code\":\"invalid_argument\",...,\"retryable\":false}} without any upstream call (~/.cache/mb-pipeline/tickets/PRD-21627/smoke.txt CALL_BAD_ID)."
+  },
+  {
+    "id": "TC-IGF-005",
+    "ac": "AC5",
+    "text": "Given the X-ITGlue-API-Key header is missing, When itglue_create_flexible_asset_field is called, Then it returns {\"error\": {\"code\": \"not_configured\", ...}} rather than raising.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_missing_credentials_envelope"],
+    "notes": "Covered generically via the shared run() path (asserted today against get_organization); the new tool goes through the same run() helper unmodified, so no per-tool duplicate is required beyond confirming the live tools/list smoke test during dev self-test.",
+    "result": "pass",
+    "evidence": "2026-11-05 dev01 self-test on dev/PRD-21627 @ c5f8a1d (main abf9dd7 merged); `uv run pytest -v tests/test_handlers.py::test_missing_credentials_envelope` PASSED (shared run() path the new tool uses). Live: POST /mcp without X-ITGlue-API-Key -> HTTP 401 {\"error\":\"Missing or invalid credentials\",...,\"required_headers\":[\"X-ITGlue-API-Key\"]} (~/.cache/mb-pipeline/tickets/PRD-21627/smoke.txt NO_HEADER). Per-tool not_configured envelope not re-asserted beyond the shared helper, as the case notes allow."
+  },
+  {
+    "id": "TC-IGF-006",
+    "ac": "AC6",
+    "text": "Given IT Glue returns 429 then 201, When itglue_create_flexible_asset_field is called, Then it retries once honouring Retry-After and returns the successful envelope; given IT Glue returns 403, Then it returns {\"error\": {\"code\": \"unauthorized\", \"retryable\": false}}.",
+    "type": "auto",
+    "tests": ["tests/test_handlers.py::test_error_mapping", "tests/test_handlers.py::test_retries_rate_limit_then_succeeds"],
+    "notes": "Error-code mapping and retry/backoff are exercised generically through the shared ITGlueClient.request() path; the new tool reuses that path unmodified, so no per-tool duplicate is required.",
+    "result": "pass",
+    "evidence": "2026-11-05 dev01 self-test on dev/PRD-21627 @ c5f8a1d (main abf9dd7 merged); `uv run pytest -v tests/test_handlers.py::test_error_mapping` 5/5 PASSED (401/403->unauthorized retryable=false, 404, 422, 500) and ::test_retries_rate_limit_then_succeeds PASSED (429+Retry-After then success) via shared ITGlueClient.request() the new tool reuses unmodified. Real IT Glue 429/403 not exercised: no vendor account (local blind spot)."
+  },
+  {
+    "id": "TC-IGF-007",
+    "ac": "AC7",
+    "text": "Given tools/list is queried, When itglue_create_flexible_asset_field is registered, Then it is present with readOnlyHint false, destructiveHint false, no agent_id parameter, is listed in README's Tools table, and no existing tool loses a name or parameter.",
+    "type": "auto",
+    "tests": [
+      "tests/test_tools.py::test_tool_names_match_baseline",
+      "tests/test_tools.py::test_parameters_are_backward_compatible",
+      "tests/test_tools.py::test_no_agent_id_parameter",
+      "tests/test_flexible_assets.py::test_create_flexible_asset_field_annotations"
+    ],
+    "notes": "Requires adding an itglue_create_flexible_asset_field entry to tests/fixtures/tools_baseline.json in the same change. test_annotations in test_tools.py only spot-checks a fixed tool-name list today and is not extended; the readOnlyHint/destructiveHint claim is checked by the new per-tool test instead.",
+    "result": "pass",
+    "evidence": "2026-11-05 dev01 self-test on dev/PRD-21627 @ c5f8a1d (main abf9dd7 merged); `uv run pytest -v` test_tools.py::test_tool_names_match_baseline, ::test_parameters_are_backward_compatible, ::test_no_agent_id_parameter and test_flexible_assets.py::test_create_flexible_asset_field_annotations all PASSED. Live tools/list (placeholder key, port 18627): 41 tools, itglue_create_flexible_asset_field present with readOnlyHint=false, destructiveHint=false; no tool has an agent_id property (~/.cache/mb-pipeline/tickets/PRD-21627/smoke.txt). README.md line 107 Tools table lists it."
+  }
+]

@@ -248,3 +248,52 @@ def register(mcp: FastMCP, settings: Settings) -> None:
             return result
 
         return await run(settings, handler, secrets=_field_secrets(fields))
+
+    @mcp.tool(
+        name="itglue_create_flexible_asset_field",
+        description=(
+            "Add a field to an existing IT Glue flexible asset type (the type's schema, not an asset "
+            "record). Get the type ID from list_flexible_asset_types; returns the new field's id."
+        ),
+        annotations=CREATE,
+        structured_output=False,
+    )
+    async def itglue_create_flexible_asset_field(
+        flexible_asset_type_id: Annotated[int, Field(description="Flexible asset type to add the field to.")],
+        name: Annotated[str, Field(description="Field name (label).")],
+        kind: Annotated[
+            str,
+            Field(
+                description=(
+                    "Field kind, e.g. Text, Textbox, Password, Tag, Checkbox, Date, Number, Select -- not "
+                    "validated locally, IT Glue rejects an invalid value."
+                )
+            ),
+        ],
+        order: Annotated[int | None, Field(description="Display order among the type's fields.")] = None,
+        required: Annotated[bool | None, Field(description="Whether the field must be filled in.")] = None,
+        show_in_list: Annotated[bool | None, Field(description="Show the field in the asset list view.")] = None,
+        use_for_title: Annotated[bool | None, Field(description="Use the field's value in the asset title.")] = None,
+        tag_type: Annotated[
+            str | None, Field(description="For kind Tag: what the tag points to, e.g. Contacts, Configurations.")
+        ] = None,
+        hint: Annotated[str | None, Field(description="Help text shown next to the field.")] = None,
+        default_value: Annotated[str | None, Field(description="Default value for new assets.")] = None,
+    ) -> str:
+        values = dict(
+            name=name,
+            kind=kind,
+            order=order,
+            required=required,
+            show_in_list=show_in_list,
+            use_for_title=use_for_title,
+            tag_type=tag_type,
+            hint=hint,
+            default_value=default_value,
+        )
+
+        async def handler(client: api.ITGlueClient):
+            path = f"/flexible_asset_types/{seg(flexible_asset_type_id)}/relationships/flexible_asset_fields"
+            return api.item(await client.post(path, api.attributes("flexible_asset_fields", values)))
+
+        return await run(settings, handler, secrets=_field_secrets([values]))
