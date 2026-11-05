@@ -166,6 +166,64 @@ async def test_update_flexible_asset_not_found_returns_envelope(call):
     assert out["error"]["code"] == "not_found"
 
 
+# PRD-21622: organization_id and restricted were added as new optional parameters.
+
+
+@respx.mock
+async def test_update_flexible_asset_can_set_organization_id(call):
+    route = respx.patch(f"{BASE}/flexible_assets/789").mock(
+        return_value=httpx.Response(200, json={"data": asset(789, **{"organization-id": 42})})
+    )
+    out = await call("update_flexible_asset", id="789", organization_id=42)
+    body = json.loads(route.calls.last.request.content)
+    assert body == {"data": {"type": "flexible_assets", "attributes": {"organization-id": 42}}}
+    assert out["organization_id"] == 42
+
+
+@respx.mock
+async def test_update_flexible_asset_can_set_restricted_true(call):
+    route = respx.patch(f"{BASE}/flexible_assets/789").mock(
+        return_value=httpx.Response(200, json={"data": asset(789, restricted=True)})
+    )
+    out = await call("update_flexible_asset", id="789", restricted=True)
+    body = json.loads(route.calls.last.request.content)
+    assert body == {"data": {"type": "flexible_assets", "attributes": {"restricted": True}}}
+    assert out["restricted"] is True
+
+
+@respx.mock
+async def test_update_flexible_asset_can_set_restricted_false(call):
+    route = respx.patch(f"{BASE}/flexible_assets/789").mock(
+        return_value=httpx.Response(200, json={"data": asset(789, restricted=False)})
+    )
+    out = await call("update_flexible_asset", id="789", restricted=False)
+    body = json.loads(route.calls.last.request.content)
+    # False must not be dropped as if it were "not provided" -- only None means that.
+    assert body == {"data": {"type": "flexible_assets", "attributes": {"restricted": False}}}
+    assert out["restricted"] is False
+
+
+@respx.mock
+async def test_update_flexible_asset_combines_old_and_new_fields(call):
+    route = respx.patch(f"{BASE}/flexible_assets/789").mock(
+        return_value=httpx.Response(
+            200,
+            json={"data": asset(789, traits={"domain-name": "new.example.com"}, **{"organization-id": 42})},
+        )
+    )
+    await call(
+        "update_flexible_asset",
+        id="789",
+        traits={"domain-name": "new.example.com"},
+        organization_id=42,
+    )
+    body = json.loads(route.calls.last.request.content)
+    assert body["data"]["attributes"] == {
+        "traits": {"domain-name": "new.example.com"},
+        "organization-id": 42,
+    }
+
+
 @respx.mock
 async def test_get_flexible_asset_type_returns_fields(call):
     # PRD-21624 AC1: fetching an existing type returns its id, name and field definitions.
