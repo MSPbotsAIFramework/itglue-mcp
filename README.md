@@ -98,6 +98,7 @@ Note: IT Glue revokes API keys that have not been used for 90 days.
 | Area | Tools |
 |---|---|
 | Organizations | `search_organizations`, `get_organization` |
+| Contacts | `itglue_list_contacts` |
 | Configurations | `search_configurations`, `get_configuration`, `archive_configuration`, `unarchive_configuration` |
 | Locations | `search_locations`, `get_location`, `create_location`, `update_location` |
 | Passwords | `search_passwords`, `get_password`, `create_password`, `update_password` |
@@ -135,6 +136,8 @@ Behaviour notes:
   passwords; those filters are applied to the returned page.
 - `itglue_list_account_users`'s `filter[name]` is an exact match on IT Glue's side, unlike the
   fuzzy-feeling name filters on other search tools in this connector.
+- `itglue_list_contacts`'s email filter is `email`, not `primary_email`; IT Glue's public API does
+  not document a `psa_id` filter on `/contacts`, so none is exposed here.
 - Section edits are only visible after `publish_document`.
 - Transient failures (429, 5xx, timeouts) are retried with backoff, honouring `Retry-After`.
 

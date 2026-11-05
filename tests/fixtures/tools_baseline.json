@@ -186,6 +186,20 @@
   ],
   "required": []
  },
+ "itglue_list_contacts": {
+  "params": [
+   "contact_type_id",
+   "email",
+   "first_name",
+   "last_name",
+   "name",
+   "organization_id",
+   "page_number",
+   "page_size",
+   "sort"
+  ],
+  "required": []
+ },
  "list_attachments": {
   "params": [
    "resource_id",
