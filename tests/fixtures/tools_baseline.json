@@ -193,6 +193,25 @@
    "id"
   ]
  },
+ "itglue_create_flexible_asset_field": {
+  "params": [
+   "default_value",
+   "flexible_asset_type_id",
+   "hint",
+   "kind",
+   "name",
+   "order",
+   "required",
+   "show_in_list",
+   "tag_type",
+   "use_for_title"
+  ],
+  "required": [
+   "flexible_asset_type_id",
+   "kind",
+   "name"
+  ]
+ },
  "itglue_create_flexible_asset_type": {
   "params": [
    "description",
