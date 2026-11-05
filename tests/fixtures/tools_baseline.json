@@ -413,6 +413,8 @@
    "archived",
    "id",
    "name",
+   "organization_id",
+   "restricted",
    "traits"
   ],
   "required": [
