@@ -15,6 +15,7 @@ from .credentials import CredentialMiddleware
 from .tools import (
     attachments,
     configurations,
+    contacts,
     documents,
     flexible_assets,
     locations,
@@ -60,6 +61,7 @@ def create_mcp(settings: Settings) -> FastMCP:
         flexible_assets,
         user_metrics,
         users,
+        contacts,
     ):
         module.register(mcp, settings)
     return mcp

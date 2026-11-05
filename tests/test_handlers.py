@@ -92,6 +92,74 @@ async def test_list_account_users_forwards_sort(call):
 
 
 @respx.mock
+async def test_list_contacts_returns_envelope_with_expected_fields(call):
+    respx.get(f"{BASE}/contacts").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "data": [
+                    doc(
+                        "contacts",
+                        456,
+                        **{
+                            "first-name": "Jane",
+                            "last-name": "Doe",
+                            "email": "jane@example.com",
+                            "organization-id": "7",
+                            "title": "Office Manager",
+                        },
+                    )
+                ]
+            },
+        )
+    )
+    out = await call("itglue_list_contacts")
+    assert out["items"] == [
+        {
+            "id": "456",
+            "first_name": "Jane",
+            "last_name": "Doe",
+            "email": "jane@example.com",
+            "organization_id": "7",
+            "title": "Office Manager",
+        }
+    ]
+
+
+@respx.mock
+async def test_list_contacts_forwards_organization_and_email_filters(call):
+    route = respx.get(f"{BASE}/contacts").mock(return_value=httpx.Response(200, json={"data": []}))
+    await call("itglue_list_contacts", organization_id="7", email="jane@example.com")
+    params = route.calls.last.request.url.params
+    assert params["filter[organization_id]"] == "7"
+    assert params["filter[email]"] == "jane@example.com"
+
+
+@respx.mock
+async def test_list_contacts_forwards_name_and_type_filters(call):
+    route = respx.get(f"{BASE}/contacts").mock(return_value=httpx.Response(200, json={"data": []}))
+    await call(
+        "itglue_list_contacts",
+        name="Jane Doe",
+        first_name="Jane",
+        last_name="Doe",
+        contact_type_id="3",
+    )
+    params = route.calls.last.request.url.params
+    assert params["filter[name]"] == "Jane Doe"
+    assert params["filter[first_name]"] == "Jane"
+    assert params["filter[last_name]"] == "Doe"
+    assert params["filter[contact_type_id]"] == "3"
+
+
+@respx.mock
+async def test_list_contacts_forwards_sort(call):
+    route = respx.get(f"{BASE}/contacts").mock(return_value=httpx.Response(200, json={"data": []}))
+    await call("itglue_list_contacts", sort="-updated_at")
+    assert route.calls.last.request.url.params["sort"] == "-updated_at"
+
+
+@respx.mock
 async def test_missing_credentials_envelope(call):
     from itglue_mcp import credentials
 
