@@ -42,7 +42,13 @@ async def test_annotations(mcp):
     )
     for name in destructive:
         assert tools[name].annotations.destructiveHint is True, name
-    for name in ("search_organizations", "get_password", "itglue_health_check", "list_attachments"):
+    for name in (
+        "search_organizations",
+        "get_password",
+        "itglue_health_check",
+        "list_attachments",
+        "itglue_list_contacts",
+    ):
         assert tools[name].annotations.readOnlyHint is True, name
     new_type_tool = tools["itglue_create_flexible_asset_type"].annotations
     assert new_type_tool.readOnlyHint is False
