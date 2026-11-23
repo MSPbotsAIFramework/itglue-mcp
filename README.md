@@ -101,7 +101,7 @@ Note: IT Glue revokes API keys that have not been used for 90 days.
 | Contacts | `itglue_list_contacts` |
 | Configurations | `search_configurations`, `get_configuration`, `archive_configuration`, `unarchive_configuration` |
 | Locations | `search_locations`, `get_location`, `create_location`, `update_location` |
-| Passwords | `search_passwords`, `get_password`, `create_password`, `update_password` |
+| Passwords | `search_passwords`, `get_password`, `list_password_folders`, `create_password`, `update_password` |
 | Documents | `search_documents`, `get_document`, `list_document_folders`, `create_document`, `update_document`, `delete_document`, `publish_document`, `archive_document`, `unarchive_document` |
 | Document sections | `list_document_sections`, `create_document_section`, `update_document_section`, `delete_document_section` |
 | Attachments | `create_attachment`, `list_attachments`, `delete_attachment` |

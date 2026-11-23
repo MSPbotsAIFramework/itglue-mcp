@@ -95,6 +95,7 @@
    "organization_id",
    "password",
    "password_category_id",
+   "password_folder_id",
    "url",
    "username"
   ],
@@ -288,6 +289,18 @@
   ],
   "required": []
  },
+ "list_password_folders": {
+  "params": [
+   "name",
+   "offset",
+   "organization_id",
+   "page_number",
+   "page_size"
+  ],
+  "required": [
+   "organization_id"
+  ]
+ },
  "publish_document": {
   "params": [
    "document_id"
@@ -370,6 +383,7 @@
    "page_number",
    "page_size",
    "password_category_id",
+   "password_folder_id",
    "sort",
    "url",
    "username"
@@ -469,6 +483,7 @@
    "organization_id",
    "password",
    "password_category_id",
+   "password_folder_id",
    "url",
    "username"
   ],

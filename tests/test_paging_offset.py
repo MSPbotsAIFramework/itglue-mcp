@@ -39,6 +39,7 @@ LISTS = [
     ("search_organizations", "/organizations", {}),
     ("search_configurations", "/configurations", {}),
     ("search_passwords", "/passwords", {}),
+    ("list_password_folders", "/organizations/7/relationships/password_folders", {"organization_id": 7}),
     ("search_locations", "/locations", {}),
     ("search_flexible_assets", "/flexible_assets", {"flexible_asset_type_id": 21103}),
     ("search_documents", "/organizations/7/relationships/documents", {"organization_id": 7}),
