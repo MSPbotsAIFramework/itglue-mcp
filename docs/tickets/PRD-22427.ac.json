@@ -1,0 +1,128 @@
+[
+ {
+  "id": "TC-ITGPF-001",
+  "ac": "AC1",
+  "dw": "DW1",
+  "text": "Given an organization with password folders, When list_password_folders is called with its ID, Then each folder is returned with id, name and parent folder id.",
+  "type": "auto",
+  "tests": [
+   "tests/test_passwords.py::test_list_password_folders_maps_fields"
+  ],
+  "priority": "P1",
+  "result": "pass",
+  "evidence": "uv run pytest -q tests/test_passwords.py::test_list_password_folders_maps_fields -> 1 passed in 0.09s"
+ },
+ {
+  "id": "TC-ITGPF-002",
+  "ac": "AC1",
+  "dw": "DW1",
+  "text": "Given a name, When list_password_folders is called, Then only folders whose name contains it (case-insensitive) are returned, and a name matching nothing returns an empty list.",
+  "type": "auto",
+  "tests": [
+   "tests/test_passwords.py::test_list_password_folders_name_filter"
+  ],
+  "priority": "P2",
+  "result": "pass",
+  "evidence": "uv run pytest -q tests/test_passwords.py::test_list_password_folders_name_filter -> 1 passed in 0.10s"
+ },
+ {
+  "id": "TC-ITGPF-003",
+  "ac": "AC2",
+  "dw": "DW2",
+  "text": "Given a folder ID, When create_password is called with it, Then the upstream request carries the folder attribute, the entry is in that folder, and the secret is not in the output.",
+  "type": "auto",
+  "tests": [
+   "tests/test_passwords.py::test_create_password_with_folder_sends_attribute"
+  ],
+  "priority": "P1",
+  "result": "pass",
+  "evidence": "uv run pytest -q tests/test_passwords.py::test_create_password_with_folder_sends_attribute -> 1 passed in 0.09s"
+ },
+ {
+  "id": "TC-ITGPF-004",
+  "ac": "AC2",
+  "dw": "DW2",
+  "text": "Given IT Glue's create response does not show the requested folder, When create_password is called, Then one follow-up move places the entry in the folder; if the move fails the entry is returned with a warning and not an error.",
+  "type": "auto",
+  "tests": [
+   "tests/test_passwords.py::test_create_password_moves_when_response_lacks_folder",
+   "tests/test_passwords.py::test_create_password_move_failure_returns_warning"
+  ],
+  "priority": "P1",
+  "result": "pass",
+  "evidence": "uv run pytest -q tests/test_passwords.py::test_create_password_moves_when_response_lacks_folder tests/test_passwords.py::test_create_password_move_failure_returns_warning -> 2 passed in 0.18s"
+ },
+ {
+  "id": "TC-ITGPF-005",
+  "ac": "AC3",
+  "dw": "DW3",
+  "text": "Given an existing entry and a folder ID, When update_password is called with only the folder ID, Then the request changes only the folder; with no field at all it still returns the 'Pass at least one field' error.",
+  "type": "auto",
+  "tests": [
+   "tests/test_passwords.py::test_update_password_moves_to_folder",
+   "tests/test_passwords.py::test_update_password_still_requires_a_field"
+  ],
+  "priority": "P1",
+  "result": "pass",
+  "evidence": "uv run pytest -q tests/test_passwords.py::test_update_password_moves_to_folder tests/test_passwords.py::test_update_password_still_requires_a_field -> 2 passed in 0.17s"
+ },
+ {
+  "id": "TC-ITGPF-006",
+  "ac": "AC4",
+  "dw": "DW4",
+  "text": "Given a folder ID, When search_passwords is called with it, Then the folder filter is sent and only entries in that folder are returned.",
+  "type": "auto",
+  "tests": [
+   "tests/test_passwords.py::test_search_passwords_by_folder"
+  ],
+  "priority": "P1",
+  "result": "pass",
+  "evidence": "uv run pytest -q tests/test_passwords.py::test_search_passwords_by_folder -> 1 passed in 0.10s"
+ },
+ {
+  "id": "TC-ITGPF-007",
+  "ac": "AC5",
+  "dw": "DW5",
+  "text": "Given no folder ID, When create_password, update_password and search_passwords are called, Then no folder attribute or filter is sent and the results are as before.",
+  "type": "auto",
+  "tests": [
+   "tests/test_passwords.py::test_password_tools_without_folder_unchanged"
+  ],
+  "priority": "P1",
+  "result": "pass",
+  "evidence": "uv run pytest -q tests/test_passwords.py::test_password_tools_without_folder_unchanged -> 1 passed in 0.10s"
+ },
+ {
+  "id": "TC-ITGPF-008",
+  "ac": "AC6",
+  "dw": "DW5",
+  "text": "Given a non-numeric folder or organization ID, When a folder-aware tool is called, Then it returns invalid_argument without calling IT Glue; given an ID IT Glue rejects, Then the standard error envelope is returned.",
+  "type": "auto",
+  "tests": [
+   "tests/test_passwords.py::test_folder_ids_must_be_numeric",
+   "tests/test_passwords.py::test_list_password_folders_not_found_envelope"
+  ],
+  "priority": "P1",
+  "result": "pass",
+  "evidence": "uv run pytest -q tests/test_passwords.py::test_folder_ids_must_be_numeric tests/test_passwords.py::test_list_password_folders_not_found_envelope -> 2 passed in 0.16s"
+ },
+ {
+  "id": "TC-ITGPF-009",
+  "ac": "AC1",
+  "dw": "DW1",
+  "text": "Given a test IT Glue organization with a password folder, When the folder is looked up by name, a new entry is created in it, a second entry is moved into it and the folder is searched, Then the lookup returns the folder, both entries are visible in that folder in IT Glue, and the search returns them and nothing outside the folder.",
+  "type": "manual",
+  "priority": "P1",
+  "precond": "Connector on INT with a real IT Glue API key (X-ITGlue-API-Key) for a test organization that has a password folder and at least one entry outside it. Use test data only, not Forte's live data.",
+  "steps": [
+   "Call list_password_folders with the test organization ID and the folder name; note the folder id.",
+   "Call create_password with that folder id; open the entry in IT Glue.",
+   "Call update_password with only the folder id on an entry outside the folder.",
+   "Call search_passwords with the organization ID and the folder id."
+  ],
+  "expect": "Step 1 returns the folder with id, name and parent. Steps 2 and 3 leave both entries in the folder in IT Glue. Step 4 returns exactly the entries in the folder and none outside it. If step 2 puts the entry at the top level, the follow-up move must have placed it in the folder.",
+  "notes": "Needs a real IT Glue account; also answers Open question Q1 (does create accept the folder).",
+  "result": "blocked",
+  "evidence": "Needs a real IT Glue API key and a test organization with a password folder; DEV01 has none. Left for the INT test leg / real-account verification."
+ }
+]

@@ -168,3 +168,155 @@ async def test_password_params_are_marked_secret(mcp):
         prop = tools[name].inputSchema["properties"]["password"]
         assert prop["writeOnly"] is True and prop["format"] == "password", name
     assert tools["update_password"].inputSchema["required"] == ["id"]
+
+
+# --- Password folders (PRD-22427) ---
+
+FOLDERS = f"{BASE}/organizations/3/relationships/password_folders"
+
+
+def folder_row(id_, name, parent=None):
+    return {"id": str(id_), "type": "password-folders", "attributes": {"name": name, "parent-id": parent}}
+
+
+@respx.mock
+async def test_list_password_folders_maps_fields(call):
+    route = respx.get(FOLDERS).mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "data": [folder_row(77, "MSPbots"), folder_row(78, "Sub", parent=77)],
+                "meta": {"current-page": 1, "total-count": 2, "total-pages": 1},
+            },
+        )
+    )
+    out = await call("list_password_folders", organization_id=3)
+    assert route.calls.last.request.url.params["page[number]"] == "1"
+    assert [(i["id"], i["name"], i["parent_id"]) for i in out["items"]] == [
+        ("77", "MSPbots", None),
+        ("78", "Sub", 77),
+    ]
+    assert out["has_more"] is False
+
+
+@respx.mock
+async def test_list_password_folders_name_filter(call):
+    respx.get(FOLDERS).mock(
+        return_value=httpx.Response(200, json={"data": [folder_row(77, "MSPbots"), folder_row(79, "Other")]})
+    )
+    out = await call("list_password_folders", organization_id=3, name="mspb")
+    assert [i["id"] for i in out["items"]] == ["77"]
+    out = await call("list_password_folders", organization_id=3, name="nothing")
+    assert out["items"] == [] and out["count"] == 0
+
+
+@respx.mock
+async def test_list_password_folders_not_found_envelope(call):
+    respx.get(FOLDERS).mock(return_value=httpx.Response(404, json={"errors": [{"detail": "Not found"}]}))
+    out = await call("list_password_folders", organization_id=3)
+    assert out["error"]["code"] == "not_found"
+
+
+@respx.mock
+async def test_create_password_with_folder_sends_attribute(call):
+    route = respx.post(f"{BASE}/organizations/3/relationships/passwords").mock(
+        return_value=httpx.Response(
+            201, json={"data": entry(9, "Jane", "jane", **{"password-folder-id": 77}, password=SECRET)}
+        )
+    )
+    out = await call("create_password", organization_id=3, name="Jane", password=SECRET, password_folder_id=77)
+    assert route.call_count == 1
+    attrs = json.loads(route.calls.last.request.content)["data"]["attributes"]
+    assert attrs["password-folder-id"] == 77
+    assert out["id"] == "9" and out["password_folder_id"] == 77 and "warning" not in out
+    assert SECRET not in json.dumps(out)
+
+
+@respx.mock
+async def test_create_password_moves_when_response_lacks_folder(call):
+    post = respx.post(f"{BASE}/organizations/3/relationships/passwords").mock(
+        return_value=httpx.Response(201, json={"data": entry(9, "Jane", "jane")})
+    )
+    patch = respx.patch(f"{BASE}/passwords/9").mock(
+        return_value=httpx.Response(200, json={"data": entry(9, "Jane", "jane", **{"password-folder-id": 77})})
+    )
+    out = await call("create_password", organization_id=3, name="Jane", password=SECRET, password_folder_id=77)
+    assert post.call_count == 1 and patch.call_count == 1
+    assert json.loads(patch.calls.last.request.content) == {
+        "data": {"type": "passwords", "attributes": {"password-folder-id": 77}}
+    }
+    assert patch.calls.last.request.url.params["show_password"] == "false"
+    assert out["password_folder_id"] == 77 and "warning" not in out
+    assert SECRET not in json.dumps(out)
+
+
+@respx.mock
+async def test_create_password_move_failure_returns_warning(call):
+    respx.post(f"{BASE}/organizations/3/relationships/passwords").mock(
+        return_value=httpx.Response(201, json={"data": entry(9, "Jane", "jane")})
+    )
+    respx.patch(f"{BASE}/passwords/9").mock(
+        return_value=httpx.Response(422, json={"errors": [{"detail": "bad folder"}]})
+    )
+    out = await call("create_password", organization_id=3, name="Jane", password=SECRET, password_folder_id=77)
+    assert "error" not in out
+    assert out["id"] == "9"
+    assert "top level" in out["warning"] and "77" in out["warning"]
+    assert SECRET not in json.dumps(out)
+
+
+@respx.mock
+async def test_update_password_moves_to_folder(call):
+    route = respx.patch(f"{BASE}/passwords/5").mock(
+        return_value=httpx.Response(200, json={"data": entry(5, "A", "a", **{"password-folder-id": 77})})
+    )
+    out = await call("update_password", id="5", password_folder_id=77)
+    assert json.loads(route.calls.last.request.content) == {
+        "data": {"type": "passwords", "attributes": {"password-folder-id": 77}}
+    }
+    assert out["password_folder_id"] == 77
+
+
+async def test_update_password_still_requires_a_field(call):
+    out = await call("update_password", id="5")
+    assert out["error"]["code"] == "invalid_argument"
+    assert "at least one field" in out["error"]["message"]
+
+
+@respx.mock
+async def test_search_passwords_by_folder(call):
+    route = respx.get(f"{BASE}/passwords").mock(
+        return_value=httpx.Response(200, json={"data": [entry(9, "Jane", "jane", **{"password-folder-id": 77})]})
+    )
+    out = await call("search_passwords", organization_id=3, password_folder_id=77)
+    assert route.calls.last.request.url.params["filter[password_folder_id]"] == "77"
+    assert [i["id"] for i in out["items"]] == ["9"]
+
+
+@respx.mock
+async def test_password_tools_without_folder_unchanged(call):
+    search = respx.get(f"{BASE}/passwords").mock(return_value=httpx.Response(200, json={"data": []}))
+    post = respx.post(f"{BASE}/organizations/3/relationships/passwords").mock(
+        return_value=httpx.Response(201, json={"data": entry(9, "Jane", "jane")})
+    )
+    patch = respx.patch(f"{BASE}/passwords/9").mock(
+        return_value=httpx.Response(200, json={"data": entry(9, "Jane", "jane")})
+    )
+    await call("search_passwords", organization_id=3)
+    await call("create_password", organization_id=3, name="Jane", password=SECRET)
+    await call("update_password", id="9", notes="n")
+    assert "filter[password_folder_id]" not in search.calls.last.request.url.params
+    assert "password-folder-id" not in json.loads(post.calls.last.request.content)["data"]["attributes"]
+    assert post.call_count == 1 and patch.call_count == 1  # no follow-up move on create
+    assert json.loads(patch.calls.last.request.content)["data"]["attributes"] == {"notes": "n"}
+
+
+async def test_folder_ids_must_be_numeric(call):
+    for tool, args in (
+        ("list_password_folders", {"organization_id": "x1"}),
+        ("create_password", {"organization_id": 3, "name": "n", "password": "p", "password_folder_id": "x1"}),
+        ("update_password", {"id": "5", "password_folder_id": "x1"}),
+        ("search_passwords", {"password_folder_id": "x1"}),
+    ):
+        out = await call(tool, **args)
+        assert out["error"]["code"] == "invalid_argument", tool
